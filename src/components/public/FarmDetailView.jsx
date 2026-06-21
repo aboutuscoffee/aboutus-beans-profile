@@ -1,0 +1,63 @@
+import Field from '../common/Field';
+import SectionBlock from '../common/SectionBlock';
+import WikiText from '../common/WikiText';
+import LinkedText from '../common/LinkedText';
+import EsmeraldaMap from './EsmeraldaMap';
+
+export default function FarmDetailView({ farm, beans, onBack, onSelectBean, onNavigate }) {
+  const related = beans.filter((b) => b.region && b.region.includes(`farm:${farm.slug}`));
+  return (
+    <div>
+      <div onClick={onBack} className="cursor-pointer text-xs text-stone-400 hover:text-stone-600 mb-6 tracking-wide">
+        ← 農園一覧へ戻る
+      </div>
+      <div className="border-l-2 border-l-stone-300 pl-6">
+        <h2 className="font-serif-jp text-2xl mb-5">{farm.name}</h2>
+        <dl className="space-y-2 mb-6">
+          <Field label="産地" value={farm.country_name} />
+          <Field label="場所" value={farm.location} />
+          <Field label="生産者" value={farm.owner} />
+          <Field label="標高" value={farm.altitude} />
+        </dl>
+        <SectionBlock title="概要"><p><WikiText text={farm.overview} onNavigate={onNavigate} /></p></SectionBlock>
+        {farm.slug === 'esmeralda' && <SectionBlock title="エリアマップ"><EsmeraldaMap /></SectionBlock>}
+        {farm.areas?.length > 0 && (
+          <SectionBlock title="主要エリア">
+            <div className="space-y-4">
+              {farm.areas.map((a) => (
+                <div key={a.name}>
+                  <div className="text-sm font-medium mb-1">{a.name}</div>
+                  <p className="text-stone-600"><LinkedText text={a.description} /></p>
+                </div>
+              ))}
+            </div>
+          </SectionBlock>
+        )}
+        {farm.ranks?.length > 0 && (
+          <SectionBlock title="ロット分類・表記">
+            <div className="space-y-4">
+              {farm.ranks.map((r) => (
+                <div key={r.name}>
+                  <div className="text-sm font-medium mb-1">{r.name}</div>
+                  <p className="text-stone-600 whitespace-pre-line">{r.description}</p>
+                </div>
+              ))}
+            </div>
+          </SectionBlock>
+        )}
+        {farm.awards && <SectionBlock title="主な実績"><p className="whitespace-pre-line">{farm.awards}</p></SectionBlock>}
+        {related.length > 0 && (
+          <SectionBlock title="関連する豆">
+            <ul className="space-y-1">
+              {related.map((b) => (
+                <li key={b.id}>
+                  <span onClick={() => onSelectBean(b.id)} className="underline decoration-dotted cursor-pointer">{b.name}</span>
+                </li>
+              ))}
+            </ul>
+          </SectionBlock>
+        )}
+      </div>
+    </div>
+  );
+}
