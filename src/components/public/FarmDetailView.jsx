@@ -22,12 +22,12 @@ export default function FarmDetailView({ farm, beans, onBack, onSelectBean, onNa
         <SectionBlock title="概要"><p><WikiText text={farm.overview} onNavigate={onNavigate} /></p></SectionBlock>
         {farm.slug === 'esmeralda' && <SectionBlock title="エリアマップ"><EsmeraldaMap /></SectionBlock>}
         {farm.areas?.length > 0 && (
-          <SectionBlock title="主要エリア">
-            <div className="space-y-4">
+          <SectionBlock title="詳細情報">
+            <div className="space-y-3">
               {farm.areas.map((a) => (
-                <div key={a.name}>
-                  <div className="text-sm font-medium mb-1">{a.name}</div>
-                  <p className="text-stone-600"><LinkedText text={a.description} /></p>
+                <div key={a.name} className="border-l-2 border-l-stone-200 pl-4 py-1">
+                  <div className="text-[10px] font-medium tracking-widest text-stone-400 mb-1 uppercase">{a.name}</div>
+                  <p className="text-stone-600 leading-relaxed"><LinkedText text={a.description} /></p>
                 </div>
               ))}
             </div>
@@ -35,17 +35,23 @@ export default function FarmDetailView({ farm, beans, onBack, onSelectBean, onNa
         )}
         {farm.ranks?.length > 0 && (
           <SectionBlock title="ロット分類・表記">
-            <div className="space-y-4">
+            <div className="space-y-3">
               {farm.ranks.map((r) => (
-                <div key={r.name}>
-                  <div className="text-sm font-medium mb-1">{r.name}</div>
+                <div key={r.name} className="border-l-2 border-l-stone-200 pl-4 py-1">
+                  <div className="text-[10px] font-medium tracking-widest text-stone-400 mb-1 uppercase">{r.name}</div>
                   <p className="text-stone-600 whitespace-pre-line">{r.description}</p>
                 </div>
               ))}
             </div>
           </SectionBlock>
         )}
-        {farm.awards && <SectionBlock title="主な実績"><p className="whitespace-pre-line">{farm.awards}</p></SectionBlock>}
+        {farm.awards && (
+          <SectionBlock title="主な実績">
+            <div className="border-l-2 border-l-amber-300 pl-4 py-1">
+              <p className="whitespace-pre-line text-stone-600">{farm.awards}</p>
+            </div>
+          </SectionBlock>
+        )}
         {related.length > 0 && (
           <SectionBlock title="関連する豆">
             <ul className="space-y-1">
