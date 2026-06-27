@@ -45,6 +45,18 @@ export default function PublicSite({ data, onOpenAdmin }) {
     setDetail(null);
   };
 
+  // 戻るラベル: 履歴があれば直前のページ種別を表示
+  const backLabel = (() => {
+    if (!navHistory.length) return null;
+    const prev = navHistory[navHistory.length - 1];
+    if (prev.detail) {
+      const labels = { beans: '豆', countries: '産地', farms: '農園', processes: '精製方法', terms: '用語集', projects: 'プロジェクト' };
+      return labels[prev.detail.type] ?? '前のページ';
+    }
+    const tabLabels = { beans: '豆一覧', countries: '産地一覧', farms: '農園一覧', processes: '精製方法一覧', terms: '用語集' };
+    return tabLabels[prev.tab] ?? '前のページ';
+  })();
+
   let content;
   if (detail) {
     if (detail.type === 'beans') {
@@ -133,18 +145,6 @@ export default function PublicSite({ data, onOpenAdmin }) {
       />
     );
   }
-
-  // 戻るラベル: 履歴があれば直前のページ種別を表示
-  const backLabel = (() => {
-    if (!navHistory.length) return null;
-    const prev = navHistory[navHistory.length - 1];
-    if (prev.detail) {
-      const labels = { beans: '豆', countries: '産地', farms: '農園', processes: '精製方法', terms: '用語集', projects: 'プロジェクト' };
-      return labels[prev.detail.type] ?? '前のページ';
-    }
-    const tabLabels = { beans: '豆一覧', countries: '産地一覧', farms: '農園一覧', processes: '精製方法一覧', terms: '用語集' };
-    return tabLabels[prev.tab] ?? '前のページ';
-  })();
 
   return (
     <div style={{ backgroundColor: '#f4efe9', color: '#2a2220', minHeight: '100vh' }}>
