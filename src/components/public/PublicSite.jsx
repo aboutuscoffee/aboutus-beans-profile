@@ -2,6 +2,7 @@ import { useState } from 'react';
 import BeanListView from './BeanListView';
 import BeanDetailView from './BeanDetailView';
 import ListSimpleView from './ListSimpleView';
+import CountriesTabView from './CountriesTabView';
 import CountryDetailView from './CountryDetailView';
 import FarmDetailView from './FarmDetailView';
 import ProcessDetailView from './ProcessDetailView';
@@ -94,15 +95,10 @@ export default function PublicSite({ data, onOpenAdmin }) {
     content = <BeanListView beans={data.beans} onSelectBean={(id) => navigateToDetail('beans', id)} />;
   } else if (tab === 'countries') {
     content = (
-      <ListSimpleView
-        items={data.countries}
-        onSelect={(slug) => navigateToDetail('countries', slug)}
-        renderItem={(c) => (
-          <>
-            <div className="font-serif-jp text-base">{c.flag} {c.name}</div>
-            <div className="text-xs text-stone-500 mt-1">{c.region}</div>
-          </>
-        )}
+      <CountriesTabView
+        countries={data.countries}
+        farms={data.farms}
+        onNavigate={navigateToDetail}
       />
     );
   } else if (tab === 'farms') {
