@@ -160,16 +160,10 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
       {/* マップ */}
       <div className="rounded-lg overflow-hidden" style={{ height: '62vh', minHeight: 340, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
         <MapContainer center={[20, 20]} zoom={2} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
-          {/* 陸地レイヤー（Stamen Watercolor） */}
           <TileLayer
-            attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>'
-            url="https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg"
-            opacity={0.85}
-          />
-          {/* 地名ラベルレイヤー */}
-          <TileLayer
-            url="https://tiles.stadiamaps.com/tiles/stamen_toner_labels/{z}/{x}/{y}{r}.png"
-            opacity={0.35}
+            attribution='Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Physical_Map/MapServer/tile/{z}/{y}/{x}"
+            opacity={0.9}
           />
           {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
