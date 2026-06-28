@@ -10,17 +10,21 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const makePinIcon = (color) =>
+const makePinIcon = (bg, ring) =>
   L.divIcon({
     className: '',
-    html: `<div style="width:14px;height:14px;border-radius:50%;background:${color};border:2px solid white;box-shadow:0 1px 4px rgba(0,0,0,0.35);"></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
-    popupAnchor: [0, -10],
+    html: `<div style="
+      width:18px;height:18px;border-radius:50%;
+      background:${bg};border:3px solid white;
+      box-shadow:0 0 0 2px ${ring}, 0 2px 6px rgba(0,0,0,0.3);
+    "></div>`,
+    iconSize: [18, 18],
+    iconAnchor: [9, 9],
+    popupAnchor: [0, -12],
   });
 
-const ACTIVE_PIN  = makePinIcon('#c2410c');
-const INACTIVE_PIN = makePinIcon('#a8a29e');
+const ACTIVE_PIN   = makePinIcon('#c2410c', '#fb923c');
+const INACTIVE_PIN = makePinIcon('#78716c', '#d6d3d1');
 
 // 自動ズーム
 function FlyTo({ lat, lng, zoom }) {
@@ -158,7 +162,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
         <MapContainer center={[20, 20]} zoom={2} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
           {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
@@ -167,12 +171,12 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
             <CircleMarker
               key={c.slug}
               center={[c.lat, c.lng]}
-              radius={7}
-              pathOptions={{ color: '#fff', weight: 2, fillColor: '#57534e', fillOpacity: 1 }}
+              radius={10}
+              pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#92400e', fillOpacity: 0.9 }}
               eventHandlers={{ click: () => handleCountryClick(c) }}
             >
-              <Tooltip direction="top" offset={[0, -8]} opacity={0.9}>
-                <span className="text-xs">{c.flag} {c.name}</span>
+              <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
+                <span style={{ fontWeight: 600 }}>{c.flag} {c.name}</span>
               </Tooltip>
             </CircleMarker>
           ))}
@@ -185,8 +189,8 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
               <CircleMarker
                 key={key}
                 center={[c.lat, c.lng]}
-                radius={9}
-                pathOptions={{ color: '#fff', weight: 2, fillColor: '#a16207', fillOpacity: 0.85 }}
+                radius={11}
+                pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#d97706', fillOpacity: 0.92 }}
                 eventHandlers={{ click: () => handleRegionClick(key, farmList) }}
               >
                 <Tooltip direction="top" offset={[0, -10]} opacity={0.95} permanent={false}>
