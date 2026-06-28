@@ -8,6 +8,7 @@ import FarmDetailView from './FarmDetailView';
 import ProcessDetailView from './ProcessDetailView';
 import TermDetailView from './TermDetailView';
 import ProjectDetailView from './ProjectDetailView';
+import MapView from './MapView';
 
 const TABS = [
   { key: 'beans', label: '豆一覧' },
@@ -15,6 +16,7 @@ const TABS = [
   { key: 'farms', label: '農園' },
   { key: 'processes', label: '精製方法' },
   { key: 'terms', label: '用語集' },
+  { key: 'map', label: '🌍 地図' },
 ];
 
 export default function PublicSite({ data, onOpenAdmin }) {
@@ -138,6 +140,15 @@ export default function PublicSite({ data, onOpenAdmin }) {
             <div className="text-xs text-stone-500 mt-1">{t.category}</div>
           </>
         )}
+      />
+    );
+  } else if (tab === 'map') {
+    content = (
+      <MapView
+        countries={data.countries}
+        farms={data.farms}
+        beans={data.beans}
+        onNavigate={navigateToDetail}
       />
     );
   }
