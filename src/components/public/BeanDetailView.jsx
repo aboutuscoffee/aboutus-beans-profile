@@ -25,16 +25,38 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
           <Field label="テロワール" value={bean.terroir ? <WikiText text={bean.terroir} onNavigate={onNavigate} /> : null} />
         </dl>
         <SectionBlock title="概要">
-          <p><WikiText text={bean.description_ja} onNavigate={onNavigate} /></p>
-          {bean.description_en && <p className="text-stone-500 mt-2 italic">{bean.description_en}</p>}
+          <WikiText text={bean.description_ja} onNavigate={onNavigate} />
+          {bean.description_en && (
+            <div className="text-stone-500 mt-3 italic">
+              {bean.description_en.split(/\n\n+/).map((p, i) => (
+                <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+              ))}
+            </div>
+          )}
         </SectionBlock>
         <SectionBlock title="テイスト">
-          <p>{bean.taste_ja}</p>
-          {bean.taste_en && <p className="text-stone-500 mt-2 italic">{bean.taste_en}</p>}
+          {bean.taste_ja && bean.taste_ja.split(/\n\n+/).map((p, i) => (
+            <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+          ))}
+          {bean.taste_en && (
+            <div className="text-stone-500 mt-3 italic">
+              {bean.taste_en.split(/\n\n+/).map((p, i) => (
+                <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+              ))}
+            </div>
+          )}
         </SectionBlock>
         <SectionBlock title="詳細">
-          {bean.detail_ja && <p>{bean.detail_ja}</p>}
-          {bean.detail_en && <p className="text-stone-500 mt-2 italic">{bean.detail_en}</p>}
+          {bean.detail_ja && bean.detail_ja.split(/\n\n+/).map((p, i) => (
+            <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+          ))}
+          {bean.detail_en && (
+            <div className="text-stone-500 mt-3 italic">
+              {bean.detail_en.split(/\n\n+/).map((p, i) => (
+                <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+              ))}
+            </div>
+          )}
         </SectionBlock>
       </div>
     </div>

@@ -1,12 +1,11 @@
 import { TYPE_PATH } from '../../constants';
 
-export default function WikiText({ text, onNavigate }) {
-  if (!text) return null;
+function parseInline(text, onNavigate, keyOffset = 0) {
   const regex = /\[\[([^\|\]]+)\|(\w+):([\w-]+)\]\]/g;
   const parts = [];
   let lastIndex = 0;
   let match;
-  let key = 0;
+  let key = keyOffset;
 
   while ((match = regex.exec(text)) !== null) {
     if (match.index > lastIndex) {
@@ -29,5 +28,25 @@ export default function WikiText({ text, onNavigate }) {
     parts.push(<span key={key++}>{text.slice(lastIndex)}</span>);
   }
 
-  return <span>{parts}</span>;
+  return parts;
+}
+
+export default function WikiText({ text, onNavigate }) {
+  if (!text) return null;
+
+  const paragraphs = text.split(/\n\n+/);
+  if (paragraphs.length === 1) {
+    return <span>{parseInline(text, onNavigate)}</span>;
+  }
+
+  let key = 0;
+  return (
+    <>
+      {paragraphs.map((para, i) => (
+        <p key={i} className={i > 0 ? 'mt-3' : ''}>
+          {parseInline(para, onNavigate, key += 100)}
+        </p>
+      ))}
+    </>
+  );
 }
