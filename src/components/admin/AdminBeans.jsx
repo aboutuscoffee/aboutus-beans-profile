@@ -6,7 +6,7 @@ import TextInput from '../common/TextInput';
 import TextArea from '../common/TextArea';
 
 const EMPTY_BEAN = {
-  name: '', origin: '', region: '', variety: '', altitude: '', process: '', terroir: '',
+  name: '', origin: '', region: '', variety: '', altitude: '', process: '', terroir: '', producer: '',
   status: '未リリース', is_new: false, price: 0,
   description_ja: '', description_en: '', taste_ja: '', taste_en: '', detail_ja: '', detail_en: '',
 };
@@ -24,6 +24,7 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
       <TextInput label="標高" value={form.altitude} onChange={(v) => set('altitude', v)} />
       <TextInput label="精製方法 [[名前|process:slug]]" value={form.process} onChange={(v) => set('process', v)} />
       <TextInput label="テロワール / ランク" value={form.terroir} onChange={(v) => set('terroir', v)} />
+      <TextInput label="生産者 (Producer)" value={form.producer ?? ''} onChange={(v) => set('producer', v)} />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <span className="block text-[11px] tracking-widest text-stone-500 mb-1">ステータス</span>
