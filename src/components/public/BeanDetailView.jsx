@@ -19,11 +19,11 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
         <dl className="space-y-2 mb-6">
           <Field label="産地" value={<WikiText text={bean.origin} onNavigate={onNavigate} />} />
           <Field label="地域・農園" value={<WikiText text={bean.region} onNavigate={onNavigate} />} />
+          <Field label="生産者" value={bean.producer ? <WikiText text={bean.producer} onNavigate={onNavigate} /> : null} />
           <Field label="品種" value={<WikiText text={bean.variety} onNavigate={onNavigate} />} />
           <Field label="標高" value={bean.altitude} />
           <Field label="精製方法" value={<WikiText text={bean.process} onNavigate={onNavigate} />} />
           <Field label="テロワール" value={bean.terroir ? <WikiText text={bean.terroir} onNavigate={onNavigate} /> : null} />
-          <Field label="生産者" value={bean.producer ? <WikiText text={bean.producer} onNavigate={onNavigate} /> : null} />
         </dl>
         <SectionBlock title="概要">
           <WikiText text={bean.description_ja} onNavigate={onNavigate} />

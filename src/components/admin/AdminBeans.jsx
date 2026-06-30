@@ -20,11 +20,11 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
       <TextInput label="豆名 *" value={form.name} onChange={(v) => set('name', v)} />
       <TextInput label="産地 [[国名|country:slug]]" value={form.origin} onChange={(v) => set('origin', v)} />
       <TextInput label="地域 / 農園 [[農園名|farm:slug]]" value={form.region} onChange={(v) => set('region', v)} />
+      <TextInput label="生産者 (Producer)" value={form.producer ?? ''} onChange={(v) => set('producer', v)} />
       <TextInput label="品種 [[品種名|term:slug]]" value={form.variety} onChange={(v) => set('variety', v)} />
       <TextInput label="標高" value={form.altitude} onChange={(v) => set('altitude', v)} />
       <TextInput label="精製方法 [[名前|process:slug]]" value={form.process} onChange={(v) => set('process', v)} />
       <TextInput label="テロワール / ランク" value={form.terroir} onChange={(v) => set('terroir', v)} />
-      <TextInput label="生産者 (Producer)" value={form.producer ?? ''} onChange={(v) => set('producer', v)} />
       <div className="grid grid-cols-2 gap-4">
         <div>
           <span className="block text-[11px] tracking-widest text-stone-500 mb-1">ステータス</span>
