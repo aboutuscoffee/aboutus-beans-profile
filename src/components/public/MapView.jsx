@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
+import { MapContainer, GeoJSON, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -26,14 +26,12 @@ const makePinIcon = (bg, ring) =>
 const ACTIVE_PIN   = makePinIcon('#c2410c', '#fb923c');
 const INACTIVE_PIN = makePinIcon('#78716c', '#d6d3d1');
 
-// タイルペインに mix-blend-mode を適用（海=白=透明、陸地のみ表示）
-function BlendTiles() {
-  const map = useMap();
-  useEffect(() => {
-    map.getPanes().tilePane.style.mixBlendMode = 'multiply';
-  }, [map]);
-  return null;
-}
+const LAND_STYLE = {
+  fillColor: '#e8e0d5',
+  fillOpacity: 1,
+  color: '#c8bfb0',
+  weight: 0.5,
+};
 
 // 自動ズーム
 function FlyTo({ lat, lng, zoom }) {
@@ -62,11 +60,23 @@ function centroid(farmList) {
 }
 
 export default function MapView({ countries, farms, beans, onNavigate }) {
-  // level: 'world' | 'country' | 'region'
   const [level, setLevel] = useState('world');
   const [selectedCountry, setSelectedCountry] = useState(null);
   const [selectedRegion, setSelectedRegion]   = useState(null);
   const [flyTarget, setFlyTarget] = useState(null);
+  const [worldGeo, setWorldGeo] = useState(null);
+
+  useEffect(() => {
+    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+      .then((r) => r.json())
+      .then((topo) => {
+        // topojsonをGeoJSONに変換
+        import('topojson-client').then(({ feature }) => {
+          setWorldGeo(feature(topo, topo.objects.land));
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   const activeFarmSlugs = useMemo(() => new Set(
     beans
@@ -74,7 +84,6 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
       .flatMap((b) => [...(b.region ?? '').matchAll(/farm:([\w-]+)/g)].map((m) => m[1]))
   ), [beans]);
 
-  // 国に属する農園
   const farmsForCountry = useMemo(() => {
     if (!selectedCountry) return [];
     return farms.filter(
@@ -82,7 +91,6 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     );
   }, [selectedCountry, farms]);
 
-  // 地域グループ
   const regionGroups = useMemo(() => {
     const groups = {};
     farmsForCountry.forEach((f) => {
@@ -93,13 +101,11 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     return groups;
   }, [farmsForCountry]);
 
-  // 選択中の地域の農園
   const farmsInRegion = useMemo(() => {
     if (!selectedRegion) return [];
     return (regionGroups[selectedRegion] ?? []);
   }, [selectedRegion, regionGroups]);
 
-  // 国クリック
   const handleCountryClick = (country) => {
     setSelectedCountry(country);
     setSelectedRegion(null);
@@ -107,7 +113,6 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     setFlyTarget({ lat: country.lat, lng: country.lng, zoom: country.zoom ?? 5 });
   };
 
-  // 地域クリック
   const handleRegionClick = (key, farmList) => {
     const c = centroid(farmList);
     if (!c) return;
@@ -116,25 +121,8 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     setFlyTarget({ lat: c.lat, lng: c.lng, zoom: 9 });
   };
 
-  // 戻る
-  const goBack = () => {
-    if (level === 'region') {
-      setLevel('country');
-      setSelectedRegion(null);
-      if (selectedCountry) {
-        setFlyTarget({ lat: selectedCountry.lat, lng: selectedCountry.lng, zoom: selectedCountry.zoom ?? 5 });
-      }
-    } else {
-      setLevel('world');
-      setSelectedCountry(null);
-      setSelectedRegion(null);
-      setFlyTarget({ lat: 20, lng: 20, zoom: 2 });
-    }
-  };
-
   const countriesWithCoords = countries.filter((c) => c.lat && c.lng);
 
-  // パンくずラベル
   const breadcrumb = [
     { label: '🌍 世界', onClick: () => { setLevel('world'); setSelectedCountry(null); setSelectedRegion(null); setFlyTarget({ lat: 20, lng: 20, zoom: 2 }); } },
     selectedCountry && { label: `${selectedCountry.flag} ${selectedCountry.name}`, onClick: () => { setLevel('country'); setSelectedRegion(null); setFlyTarget({ lat: selectedCountry.lat, lng: selectedCountry.lng, zoom: selectedCountry.zoom ?? 5 }); } },
@@ -168,13 +156,16 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
 
       {/* マップ */}
       <div className="rounded-lg overflow-hidden" style={{ height: '62vh', minHeight: 340, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
-        <MapContainer center={[20, 20]} zoom={2} style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }} scrollWheelZoom>
-          <BlendTiles />
-          <TileLayer
-            attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/positron_nolabels/{z}/{x}/{y}{r}.png"
-          />
+        <MapContainer
+          center={[20, 20]}
+          zoom={2}
+          style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
+          scrollWheelZoom
+        >
           {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
+
+          {/* 陸地GeoJSON（タイル不使用） */}
+          {worldGeo && <GeoJSON data={worldGeo} style={LAND_STYLE} />}
 
           {/* Level: world — 国マーカー */}
           {level === 'world' && countriesWithCoords.map((c) => (
