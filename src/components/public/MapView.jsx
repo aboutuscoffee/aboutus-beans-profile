@@ -59,10 +59,12 @@ function MapSetup({ onWorldZoom }) {
       }
     });
 
+    let initialized = false;
     const updateMinZoom = () => {
       const z = Math.log2(map.getSize().x / 256);
       map.setMinZoom(z);
-      if (map.getZoom() < z) map.setZoom(z);
+      if (!initialized || map.getZoom() < z) map.setZoom(z);
+      initialized = true;
       onWorldZoom(z);
     };
     updateMinZoom();
