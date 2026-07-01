@@ -44,7 +44,9 @@ function FlyTo({ lat, lng, zoom }) {
   return null;
 }
 
-// 陸地ペインを低z-indexに設定
+const RESTRICTED_BOUNDS = [[-75, -180], [75, 180]];
+
+// 陸地ペインを低z-indexに設定 + 表示範囲を75°Nに制限して北端継ぎ目を隠す
 function MapSetup() {
   const map = useMap();
   useEffect(() => {
@@ -52,6 +54,15 @@ function MapSetup() {
       const pane = map.createPane('landPane');
       pane.style.zIndex = '300';
     }
+    const minZoom = map.getBoundsZoom(RESTRICTED_BOUNDS, false);
+    map.setMinZoom(minZoom);
+    map.setMaxBounds(RESTRICTED_BOUNDS);
+    const resize = () => {
+      const z = map.getBoundsZoom(RESTRICTED_BOUNDS, false);
+      map.setMinZoom(z);
+    };
+    map.on('resize', resize);
+    return () => { map.off('resize', resize); };
   }, [map]);
   return null;
 }
@@ -136,7 +147,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
   const countriesWithCoords = countries.filter((c) => c.lat && c.lng);
 
   const breadcrumb = [
-    { label: '🌍 世界', onClick: () => { setLevel('world'); setSelectedCountry(null); setSelectedRegion(null); setFlyTarget({ lat: -10, lng: 20, zoom: 1 }); } },
+    { label: '🌍 世界', onClick: () => { setLevel('world'); setSelectedCountry(null); setSelectedRegion(null); setFlyTarget({ lat: -5, lng: 80, zoom: 1 }); } },
     selectedCountry && { label: `${selectedCountry.flag} ${selectedCountry.name}`, onClick: () => { setLevel('country'); setSelectedRegion(null); setFlyTarget({ lat: selectedCountry.lat, lng: selectedCountry.lng, zoom: selectedCountry.zoom ?? 5 }); } },
     selectedRegion  && { label: selectedRegion, onClick: null },
   ].filter(Boolean);
@@ -169,16 +180,16 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
       {/* マップ */}
       <div className="rounded-lg overflow-hidden" style={{ height: 'clamp(240px, 45vw, 58vh)', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
         <MapContainer
-          center={[-10, 20]}
+          center={[-5, 80]}
           zoom={1}
-          style={{ height: 'calc(100% + 100px)', marginTop: '-100px', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
+          style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
           dragging={false}
           scrollWheelZoom={false}
           doubleClickZoom={false}
           touchZoom={false}
           keyboard={false}
           zoomControl={false}
-          maxBounds={[[-90, -180], [90, 180]]}
+          maxBounds={RESTRICTED_BOUNDS}
           maxBoundsViscosity={1.0}
         >
           <MapSetup />
