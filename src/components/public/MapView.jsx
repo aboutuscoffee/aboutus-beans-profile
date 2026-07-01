@@ -159,10 +159,11 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
 
       {/* マップ */}
       <div className="rounded-lg overflow-hidden" style={{ height: '62vh', minHeight: 340, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
-        <MapContainer center={[20, 20]} zoom={2} style={{ height: '100%', width: '100%' }} scrollWheelZoom>
+        <MapContainer center={[20, 20]} zoom={2} style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }} scrollWheelZoom>
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}{r}.png"
+            opacity={0.85}
           />
           {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
