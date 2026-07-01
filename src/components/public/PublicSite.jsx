@@ -8,8 +8,11 @@ import FarmDetailView from './FarmDetailView';
 import ProcessDetailView from './ProcessDetailView';
 import TermDetailView from './TermDetailView';
 import ProjectDetailView from './ProjectDetailView';
+import MapView from './MapView';
+
 const TABS = [
   { key: 'beans', label: '豆一覧' },
+  { key: 'map', label: '地図' },
   { key: 'countries', label: '産地' },
   { key: 'farms', label: '農園' },
   { key: 'processes', label: '精製方法' },
@@ -90,6 +93,15 @@ export default function PublicSite({ data, onOpenAdmin }) {
         ? <ProjectDetailView project={proj} beans={data.beans} farms={data.farms} onBack={goBack} onSelectBean={(id) => navigateToDetail('beans', id)} onNavigate={navigateToDetail} backLabel={backLabel} />
         : <p>見つかりません</p>;
     }
+  } else if (tab === 'map') {
+    content = (
+      <MapView
+        countries={data.countries}
+        farms={data.farms}
+        beans={data.beans}
+        onNavigate={navigateToDetail}
+      />
+    );
   } else if (tab === 'beans') {
     content = <BeanListView beans={data.beans} onSelectBean={(id) => navigateToDetail('beans', id)} />;
   } else if (tab === 'countries') {

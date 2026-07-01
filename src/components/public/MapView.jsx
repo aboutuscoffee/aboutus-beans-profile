@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { MapContainer, GeoJSON, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { MapContainer, GeoJSON, TileLayer, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { feature } from 'topojson-client';
@@ -12,11 +12,12 @@ L.Icon.Default.mergeOptions({
 });
 
 const WORLD_CENTER = [-5, 115];
-const RESTRICTED_BOUNDS = [[-75, -180], [75, 180]];
+// 北70°/南-10°に制限（農園エリアに集中、グリーンランド継ぎ目を排除）
+const WORLD_BOUNDS = [[-12, -185], [72, 185]];
 
-const LAND_STYLE   = { fillColor: '#e8e0d5', fillOpacity: 1, color: '#c8bfb0', weight: 0.5 };
-const RIVER_STYLE  = { color: '#89b4c8', weight: 1.2, opacity: 0.75, fill: false };
-const LAKE_STYLE   = { fillColor: '#89b4c8', fillOpacity: 0.55, color: '#7aa8bc', weight: 0.5 };
+const LAND_STYLE  = { fillColor: '#e8e0d5', fillOpacity: 1, color: '#b8b0a0', weight: 0.5 };
+const RIVER_STYLE = { color: '#89b4c8', weight: 1, opacity: 0.7, fill: false };
+const LAKE_STYLE  = { fillColor: '#89b4c8', fillOpacity: 0.5, color: '#7aa8bc', weight: 0.5 };
 
 const makePinIcon = (bg, ring) =>
   L.divIcon({
@@ -28,7 +29,6 @@ const makePinIcon = (bg, ring) =>
 const ACTIVE_PIN   = makePinIcon('#c2410c', '#fb923c');
 const INACTIVE_PIN = makePinIcon('#78716c', '#d6d3d1');
 
-// 世界↔国でドラッグ・ズームを動的に切替
 function InteractionController({ locked }) {
   const map = useMap();
   useEffect(() => {
@@ -46,16 +46,20 @@ function InteractionController({ locked }) {
   return null;
 }
 
-// ペイン設定 + 動的minZoom（コンテナ幅 = 世界1周分になるズームを計算）
 function MapSetup({ onWorldZoom }) {
   const map = useMap();
   useEffect(() => {
-    ['landPane', 'riverPane', 'markerPane2'].forEach((name, i) => {
+    [
+      ['landPane', 250],
+      ['hillPane', 255],
+      ['riverPane', 260],
+    ].forEach(([name, z]) => {
       if (!map.getPane(name)) {
         const pane = map.createPane(name);
-        pane.style.zIndex = String(250 + i * 10);
+        pane.style.zIndex = String(z);
       }
     });
+
     const updateMinZoom = () => {
       const z = Math.log2(map.getSize().x / 256);
       map.setMinZoom(z);
@@ -92,20 +96,20 @@ function centroid(farmList) {
 }
 
 export default function MapView({ countries, farms, beans, onNavigate }) {
-  const [level, setLevel]                   = useState('world');
-  const [selectedCountry, setSelectedCountry] = useState(null);
-  const [selectedRegion, setSelectedRegion]   = useState(null);
-  const [flyTarget, setFlyTarget]             = useState(null);
+  const [level, setLevel]                       = useState('world');
+  const [selectedCountry, setSelectedCountry]   = useState(null);
+  const [selectedRegion, setSelectedRegion]     = useState(null);
+  const [flyTarget, setFlyTarget]               = useState(null);
   const [interactionLocked, setInteractionLocked] = useState(true);
-  const [worldGeo, setWorldGeo]   = useState(null);
-  const [riverGeo, setRiverGeo]   = useState(null);
-  const [lakeGeo, setLakeGeo]     = useState(null);
-  const [worldZoom, setWorldZoom] = useState(1);
+  const [countriesGeo, setCountriesGeo]         = useState(null);
+  const [riverGeo, setRiverGeo]                 = useState(null);
+  const [lakeGeo, setLakeGeo]                   = useState(null);
+  const [worldZoom, setWorldZoom]               = useState(1);
 
   useEffect(() => {
-    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
+    fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
       .then(r => r.json())
-      .then(topo => setWorldGeo(feature(topo, topo.objects.land)))
+      .then(topo => setCountriesGeo(feature(topo, topo.objects.countries)))
       .catch(() => {});
   }, []);
 
@@ -179,6 +183,8 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     selectedRegion  && { label: selectedRegion, onClick: null },
   ].filter(Boolean);
 
+  const onSetWorldZoom = useCallback((z) => setWorldZoom(z), []);
+
   return (
     <div>
       {/* パンくず */}
@@ -207,109 +213,115 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
         )}
       </div>
 
-      {/* マップ — 外側でclip、内側を上に35px上げて継ぎ目を隠す */}
+      {/* マップ */}
       <div
         className="rounded-lg overflow-hidden"
-        style={{ height: 'clamp(220px, 45vw, 58vh)', position: 'relative', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
+        style={{ height: 'clamp(220px, 45vw, 58vh)', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}
       >
-        <div style={{ position: 'absolute', top: '-70px', left: 0, right: 0, bottom: 0 }}>
-          <MapContainer
-            center={WORLD_CENTER}
-            zoom={1}
-            style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
-            dragging={false}
-            scrollWheelZoom={false}
-            doubleClickZoom={false}
-            touchZoom={false}
-            keyboard={false}
-            zoomControl={false}
-            maxBounds={RESTRICTED_BOUNDS}
-            maxBoundsViscosity={1.0}
-          >
-            <MapSetup onWorldZoom={setWorldZoom} />
-            <InteractionController locked={interactionLocked} />
-            {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
+        <MapContainer
+          center={WORLD_CENTER}
+          zoom={1}
+          style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
+          dragging={false}
+          scrollWheelZoom={false}
+          doubleClickZoom={false}
+          touchZoom={false}
+          keyboard={false}
+          zoomControl={false}
+          maxBounds={WORLD_BOUNDS}
+          maxBoundsViscosity={1.0}
+        >
+          <MapSetup onWorldZoom={onSetWorldZoom} />
+          <InteractionController locked={interactionLocked} />
+          {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
-            {/* 陸地 */}
-            {worldGeo && <GeoJSON data={worldGeo} style={LAND_STYLE} pane="landPane" />}
+          {/* ヒルシェード（山岳部を微妙に濃く） */}
+          <TileLayer
+            url="https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}"
+            opacity={0.15}
+            pane="hillPane"
+            attribution=""
+          />
 
-            {/* 河川 */}
-            {riverGeo && <GeoJSON data={riverGeo} style={RIVER_STYLE} pane="riverPane" />}
+          {/* 陸地（国別ポリゴン＝国境線自動表示） */}
+          {countriesGeo && <GeoJSON data={countriesGeo} style={LAND_STYLE} pane="landPane" />}
 
-            {/* 湖 */}
-            {lakeGeo && <GeoJSON data={lakeGeo} style={LAKE_STYLE} pane="riverPane" />}
+          {/* 河川 */}
+          {riverGeo && <GeoJSON data={riverGeo} style={RIVER_STYLE} pane="riverPane" />}
 
-            {/* Level: world — 国マーカー */}
-            {level === 'world' && countriesWithCoords.map(c => (
+          {/* 湖 */}
+          {lakeGeo && <GeoJSON data={lakeGeo} style={LAKE_STYLE} pane="riverPane" />}
+
+          {/* 世界ビュー：国マーカー */}
+          {level === 'world' && countriesWithCoords.map(c => (
+            <CircleMarker
+              key={c.slug}
+              center={[c.lat, c.lng]}
+              radius={10}
+              pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#92400e', fillOpacity: 0.9 }}
+              eventHandlers={{ click: () => handleCountryClick(c) }}
+            >
+              <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
+                <span style={{ fontWeight: 600 }}>{c.flag} {c.name}</span>
+              </Tooltip>
+            </CircleMarker>
+          ))}
+
+          {/* 国ビュー：地域マーカー */}
+          {level === 'country' && Object.entries(regionGroups).map(([key, farmList]) => {
+            const c = centroid(farmList);
+            if (!c) return null;
+            return (
               <CircleMarker
-                key={c.slug}
+                key={key}
                 center={[c.lat, c.lng]}
-                radius={10}
-                pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#92400e', fillOpacity: 0.9 }}
-                eventHandlers={{ click: () => handleCountryClick(c) }}
+                radius={11}
+                pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#d97706', fillOpacity: 0.92 }}
+                eventHandlers={{ click: () => handleRegionClick(key, farmList) }}
               >
-                <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
-                  <span style={{ fontWeight: 600 }}>{c.flag} {c.name}</span>
+                <Tooltip direction="top" offset={[0, -10]} opacity={0.95}>
+                  <span className="text-xs font-medium">{key}</span>
+                  <span className="text-[10px] text-stone-500 ml-1">({farmList.length}農園)</span>
                 </Tooltip>
               </CircleMarker>
-            ))}
+            );
+          })}
 
-            {/* Level: country — 地域マーカー */}
-            {level === 'country' && Object.entries(regionGroups).map(([key, farmList]) => {
-              const c = centroid(farmList);
-              if (!c) return null;
-              return (
-                <CircleMarker
-                  key={key}
-                  center={[c.lat, c.lng]}
-                  radius={11}
-                  pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#d97706', fillOpacity: 0.92 }}
-                  eventHandlers={{ click: () => handleRegionClick(key, farmList) }}
-                >
-                  <Tooltip direction="top" offset={[0, -10]} opacity={0.95}>
-                    <span className="text-xs font-medium">{key}</span>
-                    <span className="text-[10px] text-stone-500 ml-1">({farmList.length}農園)</span>
-                  </Tooltip>
-                </CircleMarker>
-              );
-            })}
-
-            {/* Level: region — 農園ピン */}
-            {level === 'region' && farmsInRegion.map(farm => {
-              const isActive = activeFarmSlugs.has(farm.slug);
-              const relatedBeans = beans.filter(b => (b.region ?? '').includes(`farm:${farm.slug}`));
-              return (
-                <Marker key={farm.slug} position={[farm.lat, farm.lng]} icon={isActive ? ACTIVE_PIN : INACTIVE_PIN}>
-                  <Popup minWidth={200}>
-                    <div className="text-sm leading-relaxed">
-                      <div className="font-bold mb-1">{farm.name}</div>
-                      {farm.location && <div className="text-stone-500 text-xs mb-1">{farm.location}</div>}
-                      {farm.altitude && <div className="text-xs text-stone-500 mb-2">🏔 {farm.altitude}</div>}
-                      <button type="button" onClick={() => onNavigate('farms', farm.slug)}
-                        className="text-xs underline text-orange-700 block mb-1 cursor-pointer">
-                        農園ページへ →
-                      </button>
-                      {relatedBeans.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-stone-100">
-                          <div className="text-[10px] text-stone-400 mb-1 tracking-wide">関連する豆</div>
-                          {relatedBeans.map(b => (
-                            <button key={b.id} type="button" onClick={() => onNavigate('beans', b.id)}
-                              className="text-xs underline text-orange-700 block cursor-pointer">
-                              {b.name}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </Popup>
-                </Marker>
-              );
-            })}
-          </MapContainer>
-        </div>
+          {/* 地域ビュー：農園ピン */}
+          {level === 'region' && farmsInRegion.map(farm => {
+            const isActive = activeFarmSlugs.has(farm.slug);
+            const relatedBeans = beans.filter(b => (b.region ?? '').includes(`farm:${farm.slug}`));
+            return (
+              <Marker key={farm.slug} position={[farm.lat, farm.lng]} icon={isActive ? ACTIVE_PIN : INACTIVE_PIN}>
+                <Popup minWidth={200}>
+                  <div className="text-sm leading-relaxed">
+                    <div className="font-bold mb-1">{farm.name}</div>
+                    {farm.location && <div className="text-stone-500 text-xs mb-1">{farm.location}</div>}
+                    {farm.altitude && <div className="text-xs text-stone-500 mb-2">🏔 {farm.altitude}</div>}
+                    <button type="button" onClick={() => onNavigate('farms', farm.slug)}
+                      className="text-xs underline text-orange-700 block mb-1 cursor-pointer">
+                      農園ページへ →
+                    </button>
+                    {relatedBeans.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-stone-100">
+                        <div className="text-[10px] text-stone-400 mb-1 tracking-wide">関連する豆</div>
+                        {relatedBeans.map(b => (
+                          <button key={b.id} type="button" onClick={() => onNavigate('beans', b.id)}
+                            className="text-xs underline text-orange-700 block cursor-pointer">
+                            {b.name}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Popup>
+              </Marker>
+            );
+          })}
+        </MapContainer>
       </div>
 
-      {/* 地域一覧（country level） */}
+      {/* 地域ボタン一覧（国ビュー） */}
       {level === 'country' && Object.keys(regionGroups).length > 0 && (
         <div className="mt-4">
           <p className="text-[11px] text-stone-400 mb-2 tracking-wide">地域をクリックしてズーム</p>
@@ -324,7 +336,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
         </div>
       )}
 
-      {/* 農園一覧（region level） */}
+      {/* 農園リスト（地域ビュー） */}
       {level === 'region' && farmsInRegion.length > 0 && (
         <div className="mt-4">
           <p className="text-[11px] text-stone-400 mb-2 tracking-wide">ピンをタップ、または農園名をクリック</p>
