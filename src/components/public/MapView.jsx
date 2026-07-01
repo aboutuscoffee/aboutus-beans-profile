@@ -26,6 +26,15 @@ const makePinIcon = (bg, ring) =>
 const ACTIVE_PIN   = makePinIcon('#c2410c', '#fb923c');
 const INACTIVE_PIN = makePinIcon('#78716c', '#d6d3d1');
 
+// タイルペインに mix-blend-mode を適用（海=白=透明、陸地のみ表示）
+function BlendTiles() {
+  const map = useMap();
+  useEffect(() => {
+    map.getPanes().tilePane.style.mixBlendMode = 'multiply';
+  }, [map]);
+  return null;
+}
+
 // 自動ズーム
 function FlyTo({ lat, lng, zoom }) {
   const map = useMap();
@@ -160,10 +169,10 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
       {/* マップ */}
       <div className="rounded-lg overflow-hidden" style={{ height: '62vh', minHeight: 340, boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
         <MapContainer center={[20, 20]} zoom={2} style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }} scrollWheelZoom>
+          <BlendTiles />
           <TileLayer
             attribution='&copy; <a href="https://carto.com/">CARTO</a>'
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/light_nolabels/{z}/{x}/{y}{r}.png"
-            opacity={0.85}
+            url="https://{s}.basemaps.cartocdn.com/rastertiles/positron_nolabels/{z}/{x}/{y}{r}.png"
           />
           {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
