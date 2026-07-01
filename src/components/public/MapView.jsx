@@ -177,8 +177,9 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
         </span>
       </div>
 
-      {/* マップ */}
-      <div className="rounded-lg overflow-hidden" style={{ height: 'clamp(240px, 45vw, 58vh)', boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
+      {/* マップ — 外側でoverflow:hidden、内側を上に35px飛び出させて継ぎ目をクリップ */}
+      <div className="rounded-lg overflow-hidden" style={{ height: 'clamp(240px, 45vw, 58vh)', boxShadow: '0 4px 20px rgba(0,0,0,0.12)', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: '-35px', left: 0, right: 0, bottom: 0 }}>
         <MapContainer
           center={[-5, 80]}
           zoom={1}
@@ -265,6 +266,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
             );
           })}
         </MapContainer>
+        </div>
       </div>
 
       {/* 地域一覧（country level） */}
