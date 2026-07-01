@@ -11,8 +11,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const WORLD_CENTER = [-5, 130];
-const WORLD_ZOOM = 2;
+const WORLD_CENTER = [-5, 20];
 const RESTRICTED_BOUNDS = [[-75, -180], [75, 180]];
 
 const LAND_STYLE   = { fillColor: '#e8e0d5', fillOpacity: 1, color: '#c8bfb0', weight: 0.5 };
@@ -47,8 +46,8 @@ function InteractionController({ locked }) {
   return null;
 }
 
-// ペイン設定 + 動的minZoom
-function MapSetup() {
+// ペイン設定 + 動的minZoom（コンテナ幅 = 世界1周分になるズームを計算）
+function MapSetup({ onWorldZoom }) {
   const map = useMap();
   useEffect(() => {
     ['landPane', 'riverPane', 'markerPane2'].forEach((name, i) => {
@@ -58,13 +57,15 @@ function MapSetup() {
       }
     });
     const updateMinZoom = () => {
-      const z = Math.ceil(Math.log2(map.getSize().x / 256));
-      map.setMinZoom(Math.max(1, z));
+      const z = Math.log2(map.getSize().x / 256);
+      map.setMinZoom(z);
+      if (map.getZoom() < z) map.setZoom(z);
+      onWorldZoom(z);
     };
     updateMinZoom();
     map.on('resize', updateMinZoom);
     return () => { map.off('resize', updateMinZoom); };
-  }, [map]);
+  }, [map, onWorldZoom]);
   return null;
 }
 
@@ -99,6 +100,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
   const [worldGeo, setWorldGeo]   = useState(null);
   const [riverGeo, setRiverGeo]   = useState(null);
   const [lakeGeo, setLakeGeo]     = useState(null);
+  const [worldZoom, setWorldZoom] = useState(1);
 
   useEffect(() => {
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/land-110m.json')
@@ -150,7 +152,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     setSelectedCountry(null);
     setSelectedRegion(null);
     setInteractionLocked(true);
-    setFlyTarget({ lat: WORLD_CENTER[0], lng: WORLD_CENTER[1], zoom: WORLD_ZOOM });
+    setFlyTarget({ lat: WORLD_CENTER[0], lng: WORLD_CENTER[1], zoom: worldZoom });
   };
 
   const handleCountryClick = (country) => {
@@ -213,7 +215,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
         <div style={{ position: 'absolute', top: '-70px', left: 0, right: 0, bottom: 0 }}>
           <MapContainer
             center={WORLD_CENTER}
-            zoom={WORLD_ZOOM}
+            zoom={1}
             style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
             dragging={false}
             scrollWheelZoom={false}
@@ -224,7 +226,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
             maxBounds={RESTRICTED_BOUNDS}
             maxBoundsViscosity={1.0}
           >
-            <MapSetup />
+            <MapSetup onWorldZoom={setWorldZoom} />
             <InteractionController locked={interactionLocked} />
             {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
