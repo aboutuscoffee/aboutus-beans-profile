@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
 });
 
 const WORLD_CENTER = [-5, 130];
-const WORLD_ZOOM = 1;
+const WORLD_ZOOM = 2;
 const RESTRICTED_BOUNDS = [[-75, -180], [75, 180]];
 
 const LAND_STYLE   = { fillColor: '#e8e0d5', fillOpacity: 1, color: '#c8bfb0', weight: 0.5 };
@@ -58,8 +58,8 @@ function MapSetup() {
       }
     });
     const updateMinZoom = () => {
-      const z = map.getBoundsZoom(RESTRICTED_BOUNDS, false);
-      map.setMinZoom(z);
+      const z = Math.ceil(Math.log2(map.getSize().x / 256));
+      map.setMinZoom(Math.max(1, z));
     };
     updateMinZoom();
     map.on('resize', updateMinZoom);
