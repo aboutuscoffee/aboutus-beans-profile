@@ -44,6 +44,35 @@ function FlyTo({ lat, lng, zoom }) {
   return null;
 }
 
+// コンテナサイズから最小ズームを動的計算し、陸地ペインを低z-indexに設定
+function MapSetup() {
+  const map = useMap();
+  useEffect(() => {
+    // 陸地GeoJSON用の低z-indexペイン
+    if (!map.getPane('landPane')) {
+      const pane = map.createPane('landPane');
+      pane.style.zIndex = '300'; // overlayPane(400)より下、tilePane(200)より上
+    }
+
+    // コンテナサイズに合わせた最小ズームを計算・適用
+    const updateMinZoom = () => {
+      const size = map.getSize();
+      const minZoom = map.getBoundsZoom(
+        [[-90, -180], [90, 180]],
+        false,
+        size
+      );
+      map.setMinZoom(minZoom);
+      if (map.getZoom() < minZoom) map.setZoom(minZoom);
+    };
+
+    updateMinZoom();
+    map.on('resize', updateMinZoom);
+    return () => { map.off('resize', updateMinZoom); };
+  }, [map]);
+  return null;
+}
+
 // 地域名の最初のセグメントを取得
 function regionKey(location) {
   if (!location) return '不明';
@@ -162,10 +191,11 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
           style={{ height: '100%', width: '100%', background: `url(${import.meta.env.BASE_URL}無題18.png) center/cover` }}
           scrollWheelZoom
         >
+          <MapSetup />
           {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
-          {/* 陸地GeoJSON（タイル不使用） */}
-          {worldGeo && <GeoJSON data={worldGeo} style={LAND_STYLE} />}
+          {/* 陸地GeoJSON（マーカーより低いペインに配置） */}
+          {worldGeo && <GeoJSON data={worldGeo} style={LAND_STYLE} pane="landPane" />}
 
           {/* Level: world — 国マーカー */}
           {level === 'world' && countriesWithCoords.map((c) => (
