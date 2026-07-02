@@ -91,7 +91,7 @@ function MapSetup({ onWorldZoom, onRegisterReset }) {
 
     const resetToWorld = () => {
       const wz = calcWorldZoom();
-      map.setView(WORLD_CENTER, wz, { animate: false });
+      map.flyTo(WORLD_CENTER, wz, { duration: 1.2 });
     };
     onRegisterReset(resetToWorld);
 
