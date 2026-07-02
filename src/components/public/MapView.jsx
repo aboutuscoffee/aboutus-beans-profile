@@ -11,7 +11,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-const WORLD_CENTER = [0, 115];
+const WORLD_CENTER = [20, 115];
 const WORLD_BOUNDS = [[-90, -185], [90, 185]];
 
 const LAND_STYLE  = { fillColor: '#e8e0d5', fillOpacity: 1, color: '#b8b0a0', weight: 0.5 };
@@ -64,7 +64,7 @@ function MapSetup({ onWorldZoom }) {
     const updateMinZoom = () => {
       const z = Math.log2(map.getSize().x / 256);
       map.setMinZoom(z);
-      const wz = z + Math.log2(1.15);
+      const wz = z + Math.log2(1.15 * 1.20);
       if (!initialized || map.getZoom() < wz) map.setZoom(wz);
       initialized = true;
       onWorldZoom(wz);
