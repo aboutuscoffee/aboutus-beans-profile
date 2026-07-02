@@ -87,11 +87,13 @@ function MapSetup({ onWorldZoom, onRegisterReset }) {
       }
     });
 
-    const calcWorldZoom = () => Math.log2(map.getSize().x / 256) + ZOOM_BOOST;
+    let savedCenter = null;
+    let savedZoom = null;
 
     const resetToWorld = () => {
-      const wz = calcWorldZoom();
-      map.flyTo(WORLD_CENTER, wz, { duration: 1.2 });
+      if (savedCenter && savedZoom !== null) {
+        map.setView(savedCenter, savedZoom, { animate: false });
+      }
     };
     onRegisterReset(resetToWorld);
 
@@ -101,6 +103,11 @@ function MapSetup({ onWorldZoom, onRegisterReset }) {
       map.setMinZoom(z);
       const wz = z + ZOOM_BOOST;
       if (!initialized || map.getZoom() < wz) map.setZoom(wz);
+      if (!initialized) {
+        // 初回ロード時の状態を保存
+        savedCenter = map.getCenter();
+        savedZoom = map.getZoom();
+      }
       initialized = true;
       onWorldZoom(wz);
     };
