@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { MapContainer, GeoJSON, TileLayer, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -72,7 +72,7 @@ function InteractionController({ locked }) {
   return null;
 }
 
-function MapSetup({ onWorldZoom }) {
+function MapSetup({ onWorldZoom, onRegisterReset }) {
   const map = useMap();
   useEffect(() => {
     [
@@ -87,6 +87,14 @@ function MapSetup({ onWorldZoom }) {
       }
     });
 
+    const calcWorldZoom = () => Math.log2(map.getSize().x / 256) + ZOOM_BOOST;
+
+    const resetToWorld = () => {
+      const wz = calcWorldZoom();
+      map.setView(WORLD_CENTER, wz, { animate: false });
+    };
+    onRegisterReset(resetToWorld);
+
     let initialized = false;
     const updateMinZoom = () => {
       const z = Math.log2(map.getSize().x / 256);
@@ -99,7 +107,7 @@ function MapSetup({ onWorldZoom }) {
     updateMinZoom();
     map.on('resize', updateMinZoom);
     return () => { map.off('resize', updateMinZoom); };
-  }, [map, onWorldZoom]);
+  }, [map, onWorldZoom, onRegisterReset]);
   return null;
 }
 
@@ -136,6 +144,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
   const [riverGeo, setRiverGeo]                   = useState(null);
   const [lakeGeo, setLakeGeo]                     = useState(null);
   const [worldZoom, setWorldZoom]                 = useState(1);
+  const resetFnRef = useRef(null);
 
   useEffect(() => {
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
@@ -209,7 +218,8 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     setSelectedCountry(null);
     setSelectedRegion(null);
     setInteractionLocked(true);
-    setFlyTarget({ lat: WORLD_CENTER[0], lng: WORLD_CENTER[1], zoom: worldZoom });
+    setFlyTarget(null);
+    resetFnRef.current?.();
   };
 
   const handleContinentClick = (continent) => {
@@ -252,6 +262,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
   ].filter(Boolean);
 
   const onSetWorldZoom = useCallback((z) => setWorldZoom(z), []);
+  const onRegisterReset = useCallback((fn) => { resetFnRef.current = fn; }, []);
 
   return (
     <div>
@@ -300,7 +311,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
             maxBounds={WORLD_BOUNDS}
             maxBoundsViscosity={1.0}
           >
-            <MapSetup onWorldZoom={onSetWorldZoom} />
+            <MapSetup onWorldZoom={onSetWorldZoom} onRegisterReset={onRegisterReset} />
             <InteractionController locked={interactionLocked} />
             {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
 
