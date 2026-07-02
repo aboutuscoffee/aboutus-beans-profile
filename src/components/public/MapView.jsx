@@ -255,9 +255,9 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
           {/* 湖 */}
           {lakeGeo && <GeoJSON data={lakeGeo} style={LAKE_STYLE} pane="riverPane" />}
 
-          {/* ラベル（大陸名→国名、ズームで自動切替） */}
+          {/* ラベル（英語のみ、大陸名→国名、ズームで自動切替） */}
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png"
+            url="https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}"
             opacity={0.85}
             pane="labelPane"
             attribution=""
