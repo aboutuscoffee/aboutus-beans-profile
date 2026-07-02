@@ -13,7 +13,7 @@ L.Icon.Default.mergeOptions({
 
 const WORLD_CENTER = [20, 115];
 const WORLD_BOUNDS = [[-90, -185], [90, 185]];
-const ZOOM_BOOST = Math.log2(1.15 * 1.20 * 0.90 * 0.85); // +15% +20% -10% -15%
+const ZOOM_BOOST = Math.log2(1.15 * 1.20 * 0.90 * 0.85 * 1.05); // +15% +20% -10% -15% +5%
 
 const LAND_STYLE  = { fillColor: '#e8e0d5', fillOpacity: 1, color: '#b8b0a0', weight: 0.5 };
 const RIVER_STYLE = { color: '#89b4c8', weight: 1, opacity: 0.7, fill: false };
