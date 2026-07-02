@@ -99,12 +99,14 @@ function MapSetup({ onWorldZoom, onRegisterReset }) {
 
     let initialized = false;
     const updateMinZoom = () => {
-      const z = Math.log2(map.getSize().x / 256);
+      const containerW = map.getSize().x;
+      const z = Math.log2(containerW / 256);
       map.setMinZoom(z);
-      const wz = z + ZOOM_BOOST;
+      // スマホ（500px未満）はブーストなし、PC はブーストあり
+      const boost = containerW >= 500 ? ZOOM_BOOST : 0;
+      const wz = z + boost;
       if (!initialized || map.getZoom() < wz) map.setZoom(wz);
       if (!initialized) {
-        // 初回ロード時の状態を保存
         savedCenter = map.getCenter();
         savedZoom = map.getZoom();
       }
