@@ -54,25 +54,35 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
         <SectionBlock title="概要">
           <CollapsibleText>
             <WikiText text={bean.description_ja} onNavigate={onNavigate} />
-            {bean.description_en && (
-              <div className="text-stone-500 mt-3 italic">
+          </CollapsibleText>
+          {bean.description_en && (
+            <CollapsibleText>
+              <div className="text-stone-500 italic">
                 {bean.description_en.split(/\n+/).map((p, i) => (
                   <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
                 ))}
               </div>
-            )}
-          </CollapsibleText>
+            </CollapsibleText>
+          )}
         </SectionBlock>
         <SectionBlock title="テイスト">
-          {bean.taste_ja && bean.taste_ja.split(/\n+/).map((p, i) => (
-            <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
-          ))}
+          {bean.taste_ja && (
+            <CollapsibleText>
+              <div>
+                {bean.taste_ja.split(/\n+/).map((p, i) => (
+                  <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+                ))}
+              </div>
+            </CollapsibleText>
+          )}
           {bean.taste_en && (
-            <div className="text-stone-500 mt-3 italic">
-              {bean.taste_en.split(/\n+/).map((p, i) => (
-                <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
-              ))}
-            </div>
+            <CollapsibleText>
+              <div className="text-stone-500 italic">
+                {bean.taste_en.split(/\n+/).map((p, i) => (
+                  <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+                ))}
+              </div>
+            </CollapsibleText>
           )}
         </SectionBlock>
         <SectionBlock title="詳細">
