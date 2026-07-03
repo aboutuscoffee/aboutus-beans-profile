@@ -1,4 +1,30 @@
+import { useState } from 'react';
 import { STATUS_COLORS } from '../../constants';
+
+function CollapsibleText({ children }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div>
+      <div
+        style={expanded ? {} : {
+          display: '-webkit-box',
+          WebkitLineClamp: 3,
+          WebkitBoxOrient: 'vertical',
+          overflow: 'hidden',
+        }}
+      >
+        {children}
+      </div>
+      <button
+        type="button"
+        onClick={() => setExpanded(e => !e)}
+        className="mt-2 text-[11px] text-stone-400 hover:text-stone-600 cursor-pointer tracking-wide"
+      >
+        {expanded ? '▲ 閉じる' : '▼ 続きを読む'}
+      </button>
+    </div>
+  );
+}
 import NewBadge from '../common/NewBadge';
 import Field from '../common/Field';
 import SectionBlock from '../common/SectionBlock';
@@ -26,14 +52,16 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
           <Field label="テロワール" value={bean.terroir ? <WikiText text={bean.terroir} onNavigate={onNavigate} /> : null} />
         </dl>
         <SectionBlock title="概要">
-          <WikiText text={bean.description_ja} onNavigate={onNavigate} />
-          {bean.description_en && (
-            <div className="text-stone-500 mt-3 italic">
-              {bean.description_en.split(/\n+/).map((p, i) => (
-                <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
-              ))}
-            </div>
-          )}
+          <CollapsibleText>
+            <WikiText text={bean.description_ja} onNavigate={onNavigate} />
+            {bean.description_en && (
+              <div className="text-stone-500 mt-3 italic">
+                {bean.description_en.split(/\n+/).map((p, i) => (
+                  <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+                ))}
+              </div>
+            )}
+          </CollapsibleText>
         </SectionBlock>
         <SectionBlock title="テイスト">
           {bean.taste_ja && bean.taste_ja.split(/\n+/).map((p, i) => (
