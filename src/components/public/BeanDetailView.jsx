@@ -51,6 +51,16 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
           <Field label="精製方法" value={<WikiText text={bean.process} onNavigate={onNavigate} />} />
           <Field label="テロワール" value={bean.terroir ? <WikiText text={bean.terroir} onNavigate={onNavigate} /> : null} />
         </dl>
+        {bean.seal_url && (
+          <a
+            href={bean.seal_url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-2 text-xs border border-stone-400 px-4 py-2 mb-6 hover:border-stone-700 transition-colors"
+          >
+            🏷 シールデータをダウンロード
+          </a>
+        )}
         <SectionBlock title="概要">
           <CollapsibleText>
             <WikiText text={bean.description_ja} onNavigate={onNavigate} />

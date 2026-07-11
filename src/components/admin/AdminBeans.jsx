@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { STATUS_ORDER, STATUS_COLORS } from '../../constants';
 import { stripWikiLinks } from '../../utils';
+import { uploadSeal } from '../../lib/db';
 import NewBadge from '../common/NewBadge';
 import TextInput from '../common/TextInput';
 import TextArea from '../common/TextArea';
@@ -14,6 +15,23 @@ const EMPTY_BEAN = {
 function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(() => (bean ? { ...bean } : { ...EMPTY_BEAN }));
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+
+  const handleSealUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !form.id) return;
+    setUploading(true);
+    setUploadError('');
+    try {
+      const url = await uploadSeal(form.id, file);
+      set('seal_url', url);
+    } catch (err) {
+      setUploadError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -50,6 +68,35 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
       <TextArea label="テイスト（English）" value={form.taste_en} onChange={(v) => set('taste_en', v)} rows={3} />
       <TextArea label="詳細（日本語）" value={form.detail_ja} onChange={(v) => set('detail_ja', v)} rows={3} />
       <TextArea label="詳細（English）" value={form.detail_en} onChange={(v) => set('detail_en', v)} rows={2} />
+
+      {/* シールデータ */}
+      <div className="border-t border-stone-200 pt-4">
+        <span className="block text-[11px] tracking-widest text-stone-500 mb-2">シールデータ（PDF / 画像）</span>
+        {form.seal_url && (
+          <div className="flex items-center gap-3 mb-2">
+            <a href={form.seal_url} target="_blank" rel="noreferrer"
+              className="text-xs underline text-stone-600 truncate max-w-xs">
+              現在のファイルを確認
+            </a>
+            <button type="button" onClick={() => set('seal_url', '')}
+              className="text-[10px] text-red-400 hover:text-red-600 cursor-pointer">
+              削除
+            </button>
+          </div>
+        )}
+        {!form.id ? (
+          <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
+        ) : (
+          <label className="cursor-pointer">
+            <span className={`inline-block text-xs border px-4 py-1.5 transition-colors ${uploading ? 'border-stone-200 text-stone-300' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
+              {uploading ? 'アップロード中...' : 'ファイルを選択'}
+            </span>
+            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai" onChange={handleSealUpload} disabled={uploading} className="hidden" />
+          </label>
+        )}
+        {uploadError && <p className="text-[11px] text-red-500 mt-1">{uploadError}</p>}
+      </div>
+
       <div className="flex gap-3 pt-4 flex-wrap">
         <button
           type="button"

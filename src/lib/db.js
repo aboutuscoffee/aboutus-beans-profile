@@ -36,6 +36,20 @@ export async function upsertBean(bean) {
   if (error) throw new Error(error.message);
 }
 
+export async function uploadSeal(beanId, file) {
+  const ext = file.name.split('.').pop();
+  const path = `${beanId}.${ext}`;
+  const { error: upErr } = await supabase.storage.from('seals').upload(path, file, { upsert: true });
+  if (upErr) throw new Error(upErr.message);
+  const { data } = supabase.storage.from('seals').getPublicUrl(path);
+  return data.publicUrl;
+}
+
+export async function deleteSeal(beanId, ext) {
+  const { error } = await supabase.storage.from('seals').remove([`${beanId}.${ext}`]);
+  if (error) throw new Error(error.message);
+}
+
 export async function deleteBean(id) {
   const { error } = await supabase.from('beans').delete().eq('id', id);
   if (error) throw new Error(error.message);

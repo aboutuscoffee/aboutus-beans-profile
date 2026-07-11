@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "aboutus-staff-todo-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "../aboutus-staff-todo"],
+      "port": 5173
+    },
+    {
+      "name": "beans-sales-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "../Beans Sales"],
+      "port": 5173
+    },
+    {
+      "name": "aboutus-sales-yoy-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--prefix", "../aboutus-sales-yoy"],
+      "port": 5174
+    }
+  ]
+}
