@@ -17,6 +17,7 @@ const TABS = [
   { key: 'farms', label: '農園' },
   { key: 'processes', label: '精製方法' },
   { key: 'terms', label: '用語集' },
+  { key: 'seals', label: 'シール' },
 ];
 
 export default function PublicSite({ data, onOpenAdmin }) {
@@ -150,6 +151,31 @@ export default function PublicSite({ data, onOpenAdmin }) {
           </>
         )}
       />
+    );
+  } else if (tab === 'seals') {
+    const beansWithSeal = data.beans.filter(b => b.seal_url);
+    content = (
+      <div>
+        <p className="text-[11px] tracking-widest text-stone-400 mb-4">{beansWithSeal.length}件</p>
+        {beansWithSeal.length === 0 ? (
+          <p className="text-sm text-stone-400">シールデータはまだありません</p>
+        ) : (
+          <div className="space-y-2">
+            {beansWithSeal.map(b => (
+              <a
+                key={b.id}
+                href={b.seal_url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between py-3 border-b border-stone-200 hover:text-stone-600 group"
+              >
+                <span className="text-sm">{b.name}</span>
+                <span className="text-[11px] text-stone-400 group-hover:text-stone-600 whitespace-nowrap ml-4">開く / 印刷 →</span>
+              </a>
+            ))}
+          </div>
+        )}
+      </div>
     );
   }
 
