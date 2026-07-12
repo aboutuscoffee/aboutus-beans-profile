@@ -42,7 +42,7 @@ const TERM_FIELDS = [
 
 const TABS = ['ダッシュボード', '豆管理', 'シール管理', '農園管理', '産地管理', '精製方法管理', '用語集管理'];
 
-export default function AdminPanel({ data, updateBeans, updateFarms, updateCountries, updateProcesses, updateTerms, onLogout }) {
+export default function AdminPanel({ data, updateBeans, updateFarms, updateCountries, updateProcesses, updateTerms, updateSeals, onLogout }) {
   const [tab, setTab] = useState('ダッシュボード');
 
   return (
@@ -72,7 +72,7 @@ export default function AdminPanel({ data, updateBeans, updateFarms, updateCount
       <main className="max-w-3xl mx-auto px-4 py-8 font-sans-jp">
         {tab === 'ダッシュボード' && <AdminDashboard data={data} />}
         {tab === '豆管理' && <AdminBeans beans={data.beans} updateBeans={updateBeans} />}
-        {tab === 'シール管理' && <AdminSeals beans={data.beans} updateBeans={updateBeans} />}
+        {tab === 'シール管理' && <AdminSeals beans={data.beans} updateBeans={updateBeans} seals={data.seals ?? []} updateSeals={updateSeals} />}
         {tab === '農園管理' && <AdminSimpleEditor title="農園" items={data.farms} updateItems={updateFarms} fields={FARM_FIELDS} />}
         {tab === '産地管理' && <AdminSimpleEditor title="産地" items={data.countries} updateItems={updateCountries} fields={COUNTRY_FIELDS} />}
         {tab === '精製方法管理' && <AdminSimpleEditor title="精製方法" items={data.processes} updateItems={updateProcesses} fields={PROCESS_FIELDS} />}

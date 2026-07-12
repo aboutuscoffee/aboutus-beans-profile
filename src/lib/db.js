@@ -7,16 +7,17 @@ function stripMeta(obj) {
 }
 
 export async function fetchAll() {
-  const [beans, farms, countries, processes, terms, projects] = await Promise.all([
+  const [beans, farms, countries, processes, terms, projects, seals] = await Promise.all([
     supabase.from('beans').select('*'),
     supabase.from('farms').select('*'),
     supabase.from('countries').select('*'),
     supabase.from('processes').select('*'),
     supabase.from('terms').select('*'),
     supabase.from('projects').select('*'),
+    supabase.from('seals').select('*'),
   ]);
 
-  for (const res of [beans, farms, countries, processes, terms, projects]) {
+  for (const res of [beans, farms, countries, processes, terms, projects, seals]) {
     if (res.error) throw new Error(res.error.message);
   }
 
@@ -27,6 +28,7 @@ export async function fetchAll() {
     processes: processes.data ?? [],
     terms: terms.data ?? [],
     projects: projects.data ?? [],
+    seals: seals.data ?? [],
   };
 }
 
@@ -48,6 +50,15 @@ export async function uploadSeal(beanId, file) {
 export async function deleteSeal(beanId, ext) {
   const { error } = await supabase.storage.from('seals').remove([`${beanId}.${ext}`]);
   if (error) throw new Error(error.message);
+}
+
+export async function uploadStandaloneSeal(slug, file) {
+  const ext = file.name.split('.').pop();
+  const path = `free/${slug}.${ext}`;
+  const { error: upErr } = await supabase.storage.from('seals').upload(path, file, { upsert: true });
+  if (upErr) throw new Error(upErr.message);
+  const { data } = supabase.storage.from('seals').getPublicUrl(path);
+  return data.publicUrl;
 }
 
 export async function deleteBean(id) {

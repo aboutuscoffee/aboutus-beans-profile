@@ -154,13 +154,27 @@ export default function PublicSite({ data, onOpenAdmin }) {
     );
   } else if (tab === 'seals') {
     const beansWithSeal = data.beans.filter(b => b.seal_url);
+    const standaloneSeals = (data.seals ?? []).filter(s => s.url);
+    const totalCount = beansWithSeal.length + standaloneSeals.length;
     content = (
       <div>
-        <p className="text-[11px] tracking-widest text-stone-400 mb-4">{beansWithSeal.length}件</p>
-        {beansWithSeal.length === 0 ? (
+        <p className="text-[11px] tracking-widest text-stone-400 mb-4">{totalCount}件</p>
+        {totalCount === 0 ? (
           <p className="text-sm text-stone-400">シールデータはまだありません</p>
         ) : (
           <div className="space-y-2">
+            {standaloneSeals.map(s => (
+              <a
+                key={s.slug}
+                href={s.url}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-between py-3 border-b border-stone-200 hover:text-stone-600 group"
+              >
+                <span className="text-sm">{s.name}</span>
+                <span className="text-[11px] text-stone-400 group-hover:text-stone-600 whitespace-nowrap ml-4">開く / 印刷 →</span>
+              </a>
+            ))}
             {beansWithSeal.map(b => (
               <a
                 key={b.id}

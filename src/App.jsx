@@ -63,6 +63,7 @@ export default function App() {
   const updateProcesses = useCallback(makeUpdater('processes', 'processes'), [makeUpdater]);
   const updateTerms     = useCallback(makeUpdater('terms',     'terms'),     [makeUpdater]);
   const updateProjects  = useCallback(makeUpdater('projects',  'projects'),  [makeUpdater]);
+  const updateSeals     = useCallback(makeUpdater('seals',     'seals'),     [makeUpdater]);
 
   // --- レンダリング ---
   if (loadError) {
@@ -100,6 +101,7 @@ export default function App() {
         updateProcesses={updateProcesses}
         updateTerms={updateTerms}
         updateProjects={updateProjects}
+        updateSeals={updateSeals}
         onLogout={() => setMode('public')}
       />
     );
