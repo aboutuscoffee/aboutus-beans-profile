@@ -61,6 +61,14 @@ export async function uploadStandaloneSeal(slug, file) {
   return data.publicUrl;
 }
 
+export async function uploadBeanImage(beanId, index, file) {
+  const path = `${beanId}-${index}.jpg`;
+  const { error: upErr } = await supabase.storage.from('bean-images').upload(path, file, { upsert: true, contentType: 'image/jpeg' });
+  if (upErr) throw new Error(upErr.message);
+  const { data } = supabase.storage.from('bean-images').getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export async function deleteBean(id) {
   const { error } = await supabase.from('beans').delete().eq('id', id);
   if (error) throw new Error(error.message);

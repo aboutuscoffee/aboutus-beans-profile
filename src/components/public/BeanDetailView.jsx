@@ -51,6 +51,15 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
           <Field label="精製方法" value={<WikiText text={bean.process} onNavigate={onNavigate} />} />
           <Field label="テロワール" value={bean.terroir ? <WikiText text={bean.terroir} onNavigate={onNavigate} /> : null} />
         </dl>
+        {bean.image_urls?.filter(Boolean).length > 0 && (
+          <div className="flex gap-2 mb-6 flex-wrap">
+            {bean.image_urls.filter(Boolean).map((url, i) => (
+              <a key={i} href={url} target="_blank" rel="noreferrer">
+                <img src={url} alt="" className="h-28 w-28 object-cover border border-stone-200 hover:opacity-80 transition-opacity" />
+              </a>
+            ))}
+          </div>
+        )}
         {bean.seal_url && (
           <a
             href={bean.seal_url}

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { STATUS_ORDER, STATUS_COLORS } from '../../constants';
 import { stripWikiLinks } from '../../utils';
-import { uploadSeal } from '../../lib/db';
+import { uploadSeal, uploadBeanImage } from '../../lib/db';
 import NewBadge from '../common/NewBadge';
 import TextInput from '../common/TextInput';
 import TextArea from '../common/TextArea';
@@ -10,6 +10,7 @@ const EMPTY_BEAN = {
   name: '', origin: '', region: '', variety: '', altitude: '', process: '', terroir: '', producer: '',
   status: '未リリース', is_new: false, price: 0,
   description_ja: '', description_en: '', taste_ja: '', taste_en: '', detail_ja: '', detail_en: '',
+  image_urls: [],
 };
 
 function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
@@ -17,6 +18,30 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [imgUploading, setImgUploading] = useState([false, false, false]);
+  const [imgError, setImgError] = useState('');
+
+  const handleImageUpload = async (index, file) => {
+    if (!file || !form.id) return;
+    setImgUploading(prev => prev.map((v, i) => i === index ? true : v));
+    setImgError('');
+    try {
+      const url = await uploadBeanImage(form.id, index, file);
+      const next = [...(form.image_urls ?? [])];
+      next[index] = url;
+      set('image_urls', next);
+    } catch (err) {
+      setImgError(err.message);
+    } finally {
+      setImgUploading(prev => prev.map((v, i) => i === index ? false : v));
+    }
+  };
+
+  const handleImageDelete = (index) => {
+    const next = [...(form.image_urls ?? [])];
+    next[index] = '';
+    set('image_urls', next.filter(Boolean).length ? next : []);
+  };
 
   const handleSealUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -68,6 +93,44 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
       <TextArea label="テイスト（English）" value={form.taste_en} onChange={(v) => set('taste_en', v)} rows={3} />
       <TextArea label="詳細（日本語）" value={form.detail_ja} onChange={(v) => set('detail_ja', v)} rows={3} />
       <TextArea label="詳細（English）" value={form.detail_en} onChange={(v) => set('detail_en', v)} rows={2} />
+
+      {/* 画像データ */}
+      <div className="border-t border-stone-200 pt-4">
+        <span className="block text-[11px] tracking-widest text-stone-500 mb-3">画像（JPEG・最大3枚）</span>
+        {!form.id ? (
+          <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
+        ) : (
+          <div className="flex gap-3 flex-wrap">
+            {[0, 1, 2].map(i => {
+              const url = (form.image_urls ?? [])[i];
+              return (
+                <div key={i} className="relative w-24 h-24 border border-stone-200 flex items-center justify-center overflow-hidden">
+                  {url ? (
+                    <>
+                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => handleImageDelete(i)}
+                        className="absolute top-0.5 right-0.5 bg-white text-red-400 hover:text-red-600 text-[10px] leading-none p-0.5 cursor-pointer"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  ) : (
+                    <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-stone-50">
+                      <span className="text-[10px] text-stone-400 text-center">
+                        {imgUploading[i] ? '...' : '+ 追加'}
+                      </span>
+                      <input type="file" accept=".jpg,.jpeg" onChange={e => handleImageUpload(i, e.target.files?.[0])} disabled={imgUploading[i]} className="hidden" />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+        {imgError && <p className="text-[11px] text-red-500 mt-2">{imgError}</p>}
+      </div>
 
       {/* シールデータ */}
       <div className="border-t border-stone-200 pt-4">
