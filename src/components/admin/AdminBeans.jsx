@@ -18,29 +18,26 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState('');
-  const [imgUploading, setImgUploading] = useState([false, false, false]);
+  const [imgUploading, setImgUploading] = useState(false);
   const [imgError, setImgError] = useState('');
 
-  const handleImageUpload = async (index, file) => {
+  const handleImageUpload = async (file) => {
     if (!file || !form.id) return;
-    setImgUploading(prev => prev.map((v, i) => i === index ? true : v));
+    setImgUploading(true);
     setImgError('');
     try {
-      const url = await uploadBeanImage(form.id, index, file);
-      const next = [...(form.image_urls ?? [])];
-      next[index] = url;
-      set('image_urls', next);
+      const url = await uploadBeanImage(form.id, file);
+      set('image_urls', [...(form.image_urls ?? []), url]);
     } catch (err) {
       setImgError(err.message);
     } finally {
-      setImgUploading(prev => prev.map((v, i) => i === index ? false : v));
+      setImgUploading(false);
     }
   };
 
   const handleImageDelete = (index) => {
-    const next = [...(form.image_urls ?? [])];
-    next[index] = '';
-    set('image_urls', next.filter(Boolean).length ? next : []);
+    const next = (form.image_urls ?? []).filter((_, i) => i !== index);
+    set('image_urls', next);
   };
 
   const handleSealUpload = async (e) => {
@@ -96,37 +93,27 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
 
       {/* 画像データ */}
       <div className="border-t border-stone-200 pt-4">
-        <span className="block text-[11px] tracking-widest text-stone-500 mb-3">画像（JPEG・最大3枚）</span>
+        <span className="block text-[11px] tracking-widest text-stone-500 mb-3">画像（JPEG / PNG）</span>
         {!form.id ? (
           <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
         ) : (
           <div className="flex gap-3 flex-wrap">
-            {[0, 1, 2].map(i => {
-              const url = (form.image_urls ?? [])[i];
-              return (
-                <div key={i} className="relative w-24 h-24 border border-stone-200 flex items-center justify-center overflow-hidden">
-                  {url ? (
-                    <>
-                      <img src={url} alt="" className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleImageDelete(i)}
-                        className="absolute top-0.5 right-0.5 bg-white text-red-400 hover:text-red-600 text-[10px] leading-none p-0.5 cursor-pointer"
-                      >
-                        ✕
-                      </button>
-                    </>
-                  ) : (
-                    <label className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-stone-50">
-                      <span className="text-[10px] text-stone-400 text-center">
-                        {imgUploading[i] ? '...' : '+ 追加'}
-                      </span>
-                      <input type="file" accept=".jpg,.jpeg,.png" onChange={e => handleImageUpload(i, e.target.files?.[0])} disabled={imgUploading[i]} className="hidden" />
-                    </label>
-                  )}
-                </div>
-              );
-            })}
+            {(form.image_urls ?? []).map((url, i) => (
+              <div key={i} className="relative w-24 h-24 border border-stone-200 overflow-hidden">
+                <img src={url} alt="" className="w-full h-full object-cover" />
+                <button
+                  type="button"
+                  onClick={() => handleImageDelete(i)}
+                  className="absolute top-0.5 right-0.5 bg-white text-red-400 hover:text-red-600 text-[10px] leading-none p-0.5 cursor-pointer"
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+            <label className="w-24 h-24 border border-stone-200 flex items-center justify-center cursor-pointer hover:bg-stone-50">
+              <span className="text-[10px] text-stone-400">{imgUploading ? '...' : '+ 追加'}</span>
+              <input type="file" accept=".jpg,.jpeg,.png" onChange={e => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
+            </label>
           </div>
         )}
         {imgError && <p className="text-[11px] text-red-500 mt-2">{imgError}</p>}

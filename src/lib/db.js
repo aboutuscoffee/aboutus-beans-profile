@@ -61,9 +61,9 @@ export async function uploadStandaloneSeal(slug, file) {
   return data.publicUrl;
 }
 
-export async function uploadBeanImage(beanId, index, file) {
+export async function uploadBeanImage(beanId, file) {
   const ext = file.name.split('.').pop().toLowerCase();
-  const path = `${beanId}-${index}.${ext}`;
+  const path = `${beanId}-${Date.now()}.${ext}`;
   const { error: upErr } = await supabase.storage.from('bean-images').upload(path, file, { upsert: true });
   if (upErr) throw new Error(upErr.message);
   const { data } = supabase.storage.from('bean-images').getPublicUrl(path);
