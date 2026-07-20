@@ -272,7 +272,7 @@ export default function AdminSeals({ beans, updateBeans, seals, updateSeals }) {
     <div>
       <h2 className="font-serif-jp text-xl mb-6">シール管理</h2>
       <div className="flex gap-6 mb-6 border-b border-stone-200 pb-3">
-        {[['beans', '豆シール'], ['standalone', '独立シール']].map(([key, label]) => (
+        {[['beans', '豆シール'], ['standalone', '卸・オンライン・ブレンド']].map(([key, label]) => (
           <button key={key} type="button" onClick={() => setSection(key)}
             className={`text-[11px] tracking-widest pb-2 -mb-px border-b transition-colors cursor-pointer ${
               section === key ? 'border-stone-700 text-stone-900' : 'border-transparent text-stone-400 hover:text-stone-600'
