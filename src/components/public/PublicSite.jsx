@@ -111,6 +111,7 @@ export default function PublicSite({ data, onOpenAdmin }) {
       <CountriesTabView
         countries={data.countries}
         farms={data.farms}
+        beans={data.beans}
         onNavigate={navigateToDetail}
       />
     );
