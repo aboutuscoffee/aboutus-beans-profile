@@ -167,10 +167,10 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
             key={c.slug}
             type="button"
             onClick={() => switchCountry(c.slug)}
-            className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] tracking-wide transition-all cursor-pointer"
+            className="whitespace-nowrap flex-shrink-0 px-3 py-1 rounded-full text-[11px] tracking-wide transition-all cursor-pointer"
             style={
               activeSlug === c.slug
-                ? { background: '#2C1917', color: '#F8F6F2', border: '0.5px solid #2C1917' }
+                ? { background: 'rgba(67,58,53,0.1)', color: '#443A35', border: '0.5px solid rgba(67,58,53,0.35)' }
                 : { background: 'transparent', color: '#6a6258', border: '0.5px solid #D0C8BE' }
             }
           >
@@ -189,23 +189,23 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
         >
           {/* 産地バンド */}
           <div
-            className="-mx-6 mb-6 px-6 py-5 flex items-end justify-between"
-            style={{ background: '#2C1917' }}
+            className="-mx-6 mb-6 px-6 py-3 flex items-end justify-between"
+            style={{ background: 'rgba(67,58,53,0.08)' }}
           >
             <div>
-              <div className="font-display font-light tracking-[0.1em]" style={{ fontSize: '26px', color: '#F8F6F2', lineHeight: 1 }}>
+              <div className="font-display font-light tracking-[0.1em]" style={{ fontSize: '26px', color: '#1A181A', lineHeight: 1 }}>
                 {country.name_en ?? COUNTRY_NAME_EN[country.name] ?? country.name}
               </div>
-              <div className="mt-1.5" style={{ fontSize: '8px', letterSpacing: '.2em', color: 'rgba(248,246,242,.4)' }}>
+              <div className="mt-1.5" style={{ fontSize: '8px', letterSpacing: '.2em', color: 'rgba(67,58,53,0.45)' }}>
                 {country.flag} &nbsp;{country.continent ?? ''}
               </div>
             </div>
             {countryFarms.length > 0 && (
               <div className="text-right">
-                <div className="font-display font-light" style={{ fontSize: '38px', color: 'rgba(248,246,242,.14)', lineHeight: 1 }}>
+                <div className="font-display font-light" style={{ fontSize: '38px', color: 'rgba(67,58,53,0.14)', lineHeight: 1 }}>
                   {countryFarms.length}
                 </div>
-                <div style={{ fontSize: '8px', letterSpacing: '.16em', color: 'rgba(248,246,242,.3)' }}>FARMS</div>
+                <div style={{ fontSize: '8px', letterSpacing: '.16em', color: 'rgba(67,58,53,0.3)' }}>FARMS</div>
               </div>
             )}
           </div>
