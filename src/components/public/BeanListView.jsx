@@ -5,7 +5,7 @@ import { stripWikiLinks } from '../../utils';
 const PAGE_SIZE = 9;
 
 const STATUS_DOT = {
-  'リリース中': '#2C1917',
+  'リリース中': '#443A35',
   '確認中':   '#C2BCA9',
   '未リリース': '#C2BCA9',
   '終売':     '#C2BCA9',
@@ -99,13 +99,14 @@ function BeanCard({ bean, onSelect }) {
       {/* 画像 */}
       <div
         className="w-full overflow-hidden mb-2.5"
-        style={{ aspectRatio: '4/3', background: '#ECE8E2' }}
+        style={{ aspectRatio: '3/4', background: '#ECE8E2' }}
       >
         {thumb ? (
           <img
             src={thumb}
             alt=""
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+            style={{ objectFit: 'contain' }}
           />
         ) : null}
       </div>

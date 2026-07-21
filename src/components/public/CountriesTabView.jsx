@@ -1,5 +1,16 @@
 import { useState, useRef } from 'react';
 
+const COUNTRY_NAME_EN = {
+  'グアテマラ': 'Guatemala', 'パナマ': 'Panama', 'エチオピア': 'Ethiopia',
+  'コロンビア': 'Colombia', 'コスタリカ': 'Costa Rica', 'ルワンダ': 'Rwanda',
+  'ホンジュラス': 'Honduras', 'ケニア': 'Kenya', 'ブラジル': 'Brazil',
+  'インドネシア': 'Indonesia', 'ブルンジ': 'Burundi', 'タンザニア': 'Tanzania',
+  'イエメン': 'Yemen', 'ジャマイカ': 'Jamaica', 'ハワイ': 'Hawaii',
+  'ペルー': 'Peru', 'ボリビア': 'Bolivia', 'エルサルバドル': 'El Salvador',
+  'ニカラグア': 'Nicaragua', 'メキシコ': 'Mexico', 'タイ': 'Thailand',
+  'ミャンマー': 'Myanmar', 'インド': 'India', 'パプアニューギニア': 'Papua New Guinea',
+};
+
 function beansForFarm(beans, farmSlug) {
   return beans.filter(
     (b) => b.region && b.region.includes(`|farm:${farmSlug}]`)
@@ -41,7 +52,7 @@ function FarmRow({ farm, beans, onSelectBean, onSelectFarm }) {
           style={{
             position: 'absolute',
             left: 0,
-            top: 'calc(100% + 4px)',
+            bottom: 'calc(100% + 4px)',
             minWidth: '220px',
             background: '#fdfaf7',
             border: '0.5px solid #9a9090',
@@ -50,7 +61,7 @@ function FarmRow({ farm, beans, onSelectBean, onSelectFarm }) {
             zIndex: 9999,
             padding: '10px',
             opacity: hover ? 1 : 0,
-            transform: hover ? 'translateY(0)' : 'translateY(-5px)',
+            transform: hover ? 'translateY(0)' : 'translateY(5px)',
             transition: 'opacity 0.15s ease, transform 0.15s ease',
             pointerEvents: hover ? 'auto' : 'none',
           }}
@@ -59,11 +70,11 @@ function FarmRow({ farm, beans, onSelectBean, onSelectFarm }) {
           <div
             style={{
               position: 'absolute',
-              top: '-5px', left: '20px',
+              bottom: '-5px', left: '20px',
               width: '9px', height: '9px',
               background: '#fdfaf7',
-              borderLeft: '0.5px solid #9a9090',
-              borderTop: '0.5px solid #9a9090',
+              borderRight: '0.5px solid #9a9090',
+              borderBottom: '0.5px solid #9a9090',
               transform: 'rotate(45deg)',
             }}
           />
@@ -183,7 +194,7 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
           >
             <div>
               <div className="font-display font-light tracking-[0.1em]" style={{ fontSize: '26px', color: '#F8F6F2', lineHeight: 1 }}>
-                {country.name_en ?? country.name}
+                {country.name_en ?? COUNTRY_NAME_EN[country.name] ?? country.name}
               </div>
               <div className="mt-1.5" style={{ fontSize: '8px', letterSpacing: '.2em', color: 'rgba(248,246,242,.4)' }}>
                 {country.flag} &nbsp;{country.continent ?? ''}
