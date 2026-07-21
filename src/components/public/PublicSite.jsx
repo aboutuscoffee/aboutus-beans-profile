@@ -159,7 +159,7 @@ export default function PublicSite({ data, onOpenAdmin }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#F8F6F2', color: '#1A181A', minHeight: '100vh' }} className="font-sans-jp">
+    <div style={{ backgroundColor: '#FAFAF8', color: '#1A181A', minHeight: '100vh' }} className="font-sans-jp">
       {/* フルワイドダークヘッダー */}
       <header style={{ backgroundColor: '#1A181A' }}>
         <div className="max-w-2xl mx-auto px-6 py-7 relative">
