@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { MapContainer, GeoJSON, TileLayer, Marker, Popup, useMap, CircleMarker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -48,12 +48,12 @@ const CONTINENTS = [
 const makePinIcon = (bg, ring) =>
   L.divIcon({
     className: '',
-    html: `<div style="width:18px;height:18px;border-radius:50%;background:${bg};border:3px solid white;box-shadow:0 0 0 2px ${ring},0 2px 6px rgba(0,0,0,0.3);"></div>`,
+    html: `<div style="width:18px;height:18px;border-radius:50%;background:${bg};border:2.5px solid white;box-shadow:0 0 0 1.5px ${ring},0 2px 6px rgba(0,0,0,0.25);"></div>`,
     iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -12],
   });
 
-const ACTIVE_PIN   = makePinIcon('#c2410c', '#fb923c');
-const INACTIVE_PIN = makePinIcon('#78716c', '#d6d3d1');
+const ACTIVE_PIN   = makePinIcon('#443A35', '#8a7a70');
+const INACTIVE_PIN = makePinIcon('#b0a898', '#d8d0c8');
 
 function InteractionController({ locked }) {
   const map = useMap();
@@ -72,7 +72,7 @@ function InteractionController({ locked }) {
   return null;
 }
 
-function MapSetup({ onWorldZoom, onRegisterReset }) {
+function MapSetup({ onWorldZoom }) {
   const map = useMap();
   useEffect(() => {
     [
@@ -87,44 +87,32 @@ function MapSetup({ onWorldZoom, onRegisterReset }) {
       }
     });
 
-    let savedCenter = null;
-    let savedZoom = null;
-
-    const resetToWorld = () => {
-      if (savedCenter && savedZoom !== null) {
-        map.setView(savedCenter, savedZoom, { animate: false });
-      }
-    };
-    onRegisterReset(resetToWorld);
-
     let initialized = false;
     const updateMinZoom = () => {
       const containerW = map.getSize().x;
       const z = Math.log2(containerW / 256);
       map.setMinZoom(z);
-      // スマホ（500px未満）はブーストなし、PC はブーストあり
       const boost = containerW >= 500 ? ZOOM_BOOST : 0;
       const wz = z + boost;
       if (!initialized || map.getZoom() < wz) map.setZoom(wz);
-      if (!initialized) {
-        savedCenter = map.getCenter();
-        savedZoom = map.getZoom();
-      }
       initialized = true;
       onWorldZoom(wz);
     };
     updateMinZoom();
     map.on('resize', updateMinZoom);
     return () => { map.off('resize', updateMinZoom); };
-  }, [map, onWorldZoom, onRegisterReset]);
+  }, [map, onWorldZoom]);
   return null;
 }
 
-function FlyTo({ lat, lng, zoom }) {
+function FlyTo({ lat, lng, zoom, instant }) {
   const map = useMap();
   useEffect(() => {
-    if (lat != null && lng != null) map.flyTo([lat, lng], zoom, { duration: 1.2 });
-  }, [lat, lng, zoom, map]);
+    if (lat != null && lng != null) {
+      if (instant) map.setView([lat, lng], zoom, { animate: false });
+      else map.flyTo([lat, lng], zoom, { duration: 1.2 });
+    }
+  }, [lat, lng, zoom, instant, map]);
   return null;
 }
 
@@ -153,7 +141,6 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
   const [riverGeo, setRiverGeo]                   = useState(null);
   const [lakeGeo, setLakeGeo]                     = useState(null);
   const [worldZoom, setWorldZoom]                 = useState(1);
-  const resetFnRef = useRef(null);
 
   useEffect(() => {
     fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json')
@@ -227,8 +214,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
     setSelectedCountry(null);
     setSelectedRegion(null);
     setInteractionLocked(true);
-    setFlyTarget(null);
-    resetFnRef.current?.();
+    setFlyTarget({ lat: WORLD_CENTER[0], lng: WORLD_CENTER[1], zoom: worldZoom, instant: true });
   };
 
   const handleContinentClick = (continent) => {
@@ -271,33 +257,35 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
   ].filter(Boolean);
 
   const onSetWorldZoom = useCallback((z) => setWorldZoom(z), []);
-  const onRegisterReset = useCallback((fn) => { resetFnRef.current = fn; }, []);
+
+  const PILL_ACTIVE   = { background: 'rgba(67,58,53,0.1)', color: '#443A35', border: '0.5px solid rgba(67,58,53,0.35)', borderRadius: '20px' };
+  const PILL_INACTIVE = { background: 'transparent', color: '#6a6258', border: '0.5px solid #D0C8BE', borderRadius: '20px' };
 
   return (
     <div>
       {/* パンくず */}
-      <div className="flex items-center gap-1.5 text-[11px] text-stone-500 mb-3 flex-wrap">
+      <div className="flex items-center gap-1.5 mb-3 flex-wrap" style={{ fontSize: '11px', letterSpacing: '.06em' }}>
         {breadcrumb.map((b, i) => (
           <span key={i} className="flex items-center gap-1.5">
-            {i > 0 && <span className="text-stone-300">›</span>}
+            {i > 0 && <span style={{ color: '#D0C8BE' }}>›</span>}
             {b.onClick
-              ? <button type="button" onClick={b.onClick} className="underline decoration-dotted cursor-pointer hover:text-stone-800">{b.label}</button>
-              : <span className="text-stone-800 font-medium">{b.label}</span>
+              ? <button type="button" onClick={b.onClick} className="cursor-pointer transition-colors" style={{ color: '#9a9080', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>{b.label}</button>
+              : <span style={{ color: '#1A181A', fontWeight: 500 }}>{b.label}</span>
             }
           </span>
         ))}
       </div>
 
       {/* 凡例 */}
-      <div className="flex gap-4 mb-3 text-[11px] text-stone-500">
+      <div className="flex gap-4 mb-3" style={{ fontSize: '11px', color: '#9a9080', letterSpacing: '.04em' }}>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-full bg-orange-700 border-2 border-white shadow" />販売中・確認中
+          <span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: '#443A35', boxShadow: '0 0 0 1px #8a7a70' }} />販売中・確認中
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-full bg-stone-400 border-2 border-white shadow" />その他
+          <span className="inline-block w-2.5 h-2.5 rounded-full border-2 border-white" style={{ background: '#b0a898', boxShadow: '0 0 0 1px #d8d0c8' }} />その他
         </span>
         {!interactionLocked && (
-          <span className="ml-auto text-stone-400">ドラッグ・ズーム有効</span>
+          <span className="ml-auto" style={{ color: '#C2BCA9' }}>ドラッグ・ズーム有効</span>
         )}
       </div>
 
@@ -320,9 +308,9 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
             maxBounds={WORLD_BOUNDS}
             maxBoundsViscosity={1.0}
           >
-            <MapSetup onWorldZoom={onSetWorldZoom} onRegisterReset={onRegisterReset} />
+            <MapSetup onWorldZoom={onSetWorldZoom} />
             <InteractionController locked={interactionLocked} />
-            {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} />}
+            {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} instant={flyTarget.instant} />}
 
             {/* ヒルシェード */}
             <TileLayer
@@ -355,10 +343,10 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
                 key={ct.key}
                 center={[ct.lat, ct.lng]}
                 radius={13}
-                pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#92400e', fillOpacity: 0.9 }}
+                pathOptions={{ color: '#fff', weight: 2, fillColor: '#443A35', fillOpacity: 0.88 }}
                 eventHandlers={{ click: () => handleContinentClick(ct) }}
               >
-                <Tooltip direction="top" offset={[0, -14]} opacity={0.95}>
+                <Tooltip direction="top" offset={[0, -14]} opacity={0.96}>
                   <span style={{ fontWeight: 600 }}>{ct.name}</span>
                   <span style={{ fontSize: '10px', color: '#888', marginLeft: '4px' }}>
                     ({(countriesByContinent[ct.key] ?? []).length}か国)
@@ -373,10 +361,10 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
                 key={c.slug}
                 center={[c.lat, c.lng]}
                 radius={10}
-                pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#92400e', fillOpacity: 0.9 }}
+                pathOptions={{ color: '#fff', weight: 2, fillColor: '#443A35', fillOpacity: 0.88 }}
                 eventHandlers={{ click: () => handleCountryClick(c) }}
               >
-                <Tooltip direction="top" offset={[0, -12]} opacity={0.95}>
+                <Tooltip direction="top" offset={[0, -12]} opacity={0.96}>
                   <span style={{ fontWeight: 600 }}>{c.flag} {c.name}</span>
                 </Tooltip>
               </CircleMarker>
@@ -391,10 +379,10 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
                   key={key}
                   center={[c.lat, c.lng]}
                   radius={10}
-                  pathOptions={{ color: '#fff', weight: 2.5, fillColor: '#d97706', fillOpacity: 0.92 }}
+                  pathOptions={{ color: '#fff', weight: 2, fillColor: '#5a4e44', fillOpacity: 0.9 }}
                   eventHandlers={{ click: () => handleRegionClick(key, farmList) }}
                 >
-                  <Tooltip permanent direction="top" offset={[0, -12]} opacity={0.92}>
+                  <Tooltip permanent direction="top" offset={[0, -12]} opacity={0.95}>
                     <span style={{ fontWeight: 600, fontSize: '11px' }}>{key}</span>
                   </Tooltip>
                 </CircleMarker>
@@ -413,7 +401,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
                       {farm.location && <div className="text-stone-500 text-xs mb-1">{farm.location}</div>}
                       {farm.altitude && <div className="text-xs text-stone-500 mb-2">🏔 {farm.altitude}</div>}
                       <button type="button" onClick={() => onNavigate('farms', farm.slug)}
-                        className="text-xs underline text-orange-700 block mb-1 cursor-pointer">
+                        className="text-xs underline block mb-1 cursor-pointer" style={{ color: '#443A35' }}>
                         農園ページへ →
                       </button>
                       {relatedBeans.length > 0 && (
@@ -421,7 +409,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
                           <div className="text-[10px] text-stone-400 mb-1 tracking-wide">関連する豆</div>
                           {relatedBeans.map(b => (
                             <button key={b.id} type="button" onClick={() => onNavigate('beans', b.id)}
-                              className="text-xs underline text-orange-700 block cursor-pointer">
+                              className="text-xs underline block cursor-pointer" style={{ color: '#443A35' }}>
                               {b.name}
                             </button>
                           ))}
@@ -438,12 +426,13 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
 
       {/* 国ボタン一覧（大陸ビュー） */}
       {level === 'continent' && countriesInContinent.length > 0 && (
-        <div className="mt-4">
-          <p className="text-[11px] text-stone-400 mb-2 tracking-wide">国をクリックしてズーム</p>
+        <div className="mt-5">
+          <p className="mb-2.5" style={{ fontSize: '10px', letterSpacing: '.12em', color: '#9a9080' }}>国をタップしてズーム</p>
           <div className="flex flex-wrap gap-2">
             {countriesInContinent.map(c => (
               <button key={c.slug} type="button" onClick={() => handleCountryClick(c)}
-                className="px-3 py-1.5 text-xs border border-stone-300 bg-white hover:border-stone-600 transition-colors cursor-pointer">
+                className="px-3 py-1.5 text-[12px] tracking-wide transition-all cursor-pointer"
+                style={PILL_INACTIVE}>
                 {c.flag} {c.name}
               </button>
             ))}
@@ -453,13 +442,14 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
 
       {/* 地域ボタン一覧（国ビュー） */}
       {level === 'country' && Object.keys(regionGroups).length > 0 && (
-        <div className="mt-4">
-          <p className="text-[11px] text-stone-400 mb-2 tracking-wide">地域をクリックしてズーム</p>
+        <div className="mt-5">
+          <p className="mb-2.5" style={{ fontSize: '10px', letterSpacing: '.12em', color: '#9a9080' }}>地域をタップしてズーム</p>
           <div className="flex flex-wrap gap-2">
             {Object.entries(regionGroups).map(([key, farmList]) => (
               <button key={key} type="button" onClick={() => handleRegionClick(key, farmList)}
-                className="px-3 py-1.5 text-xs border border-stone-300 bg-white hover:border-stone-600 transition-colors cursor-pointer">
-                {key} <span className="text-stone-400">({farmList.length})</span>
+                className="px-3 py-1.5 text-[12px] tracking-wide transition-all cursor-pointer"
+                style={PILL_INACTIVE}>
+                {key} <span style={{ color: '#C2BCA9' }}>({farmList.length})</span>
               </button>
             ))}
           </div>
@@ -468,15 +458,16 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
 
       {/* 農園リスト（地域ビュー） */}
       {level === 'region' && farmsInRegion.length > 0 && (
-        <div className="mt-4">
-          <p className="text-[11px] text-stone-400 mb-2 tracking-wide">ピンをタップ、または農園名をクリック</p>
+        <div className="mt-5">
+          <p className="mb-2.5" style={{ fontSize: '10px', letterSpacing: '.12em', color: '#9a9080' }}>農園名をタップして詳細へ</p>
           <div className="space-y-1">
             {farmsInRegion.map(farm => (
               <button key={farm.slug} type="button" onClick={() => onNavigate('farms', farm.slug)}
-                className="w-full text-left px-3 py-2 text-sm border border-stone-200 bg-white hover:bg-stone-50 transition-colors cursor-pointer flex justify-between items-center">
-                <span className="underline decoration-dotted">{farm.name}</span>
+                className="w-full text-left px-4 py-3 text-sm transition-colors cursor-pointer flex justify-between items-center"
+                style={{ borderTop: '0.5px solid #E0DCD6', color: '#4a4038' }}>
+                <span>{farm.name}</span>
                 {activeFarmSlugs.has(farm.slug) && (
-                  <span className="text-[10px] text-orange-700 border border-orange-200 px-1.5 py-0.5">販売中</span>
+                  <span className="text-[10px] tracking-wider flex-shrink-0 ml-3 px-2 py-0.5" style={{ color: '#443A35', border: '0.5px solid rgba(67,58,53,0.3)' }}>販売中</span>
                 )}
               </button>
             ))}
@@ -485,7 +476,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
       )}
 
       {level === 'world' && (
-        <p className="text-[11px] text-stone-400 mt-3 text-center">大陸マーカーをクリックして絞り込む</p>
+        <p className="mt-3 text-center" style={{ fontSize: '11px', color: '#C2BCA9', letterSpacing: '.06em' }}>大陸マーカーをタップして絞り込む</p>
       )}
     </div>
   );
