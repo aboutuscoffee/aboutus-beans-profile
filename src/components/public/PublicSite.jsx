@@ -159,32 +159,47 @@ export default function PublicSite({ data, onOpenAdmin }) {
   }
 
   return (
-    <div style={{ backgroundColor: '#f4efe9', color: '#2a2220', minHeight: '100vh' }}>
-      <div className="max-w-2xl mx-auto px-6 font-sans-jp">
-        <header className="pt-10 pb-8">
-          <div className="flex justify-end mb-4">
+    <div style={{ backgroundColor: '#F8F6F2', color: '#1A181A', minHeight: '100vh' }} className="font-sans-jp">
+      {/* フルワイドダークヘッダー */}
+      <header style={{ backgroundColor: '#1A181A' }}>
+        <div className="max-w-2xl mx-auto px-6 py-7 relative">
+          <div className="flex justify-end mb-5">
             <button
               onClick={onOpenAdmin}
               type="button"
-              className="text-[11px] tracking-widest text-stone-500 bg-white border border-stone-300 px-3 py-1.5 hover:bg-stone-100 transition-colors cursor-pointer"
+              className="text-[9px] tracking-widest cursor-pointer transition-colors"
+              style={{ color: '#4a4238', border: '0.5px solid #3a3228', padding: '4px 12px' }}
             >
               管理画面
             </button>
           </div>
           <div className="text-center">
-            <h1 className="font-serif-jp text-3xl font-light tracking-wide">Bean Profile</h1>
-            <p className="text-[11px] text-stone-400 mt-2 tracking-[0.2em]">About Us Coffee 内部豆プロファイル集</p>
+            <h1 className="font-display font-light tracking-[0.12em]" style={{ fontSize: '28px', color: '#F8F6F2' }}>
+              Bean Profile
+            </h1>
+            <div style={{ width: '24px', height: '0.5px', background: '#2C1917', margin: '10px auto' }} />
+            <p className="text-[9px] tracking-[0.26em]" style={{ color: '#5a5248' }}>
+              ABOUT US COFFEE 内部豆プロファイル集
+            </p>
           </div>
-        </header>
-        <nav className="flex justify-center gap-6 border-b border-stone-300 pb-3 mb-10 text-[11px] tracking-[0.2em] overflow-x-auto">
+        </div>
+      </header>
+
+      <div className="max-w-2xl mx-auto px-6">
+        <nav
+          className="flex justify-center gap-6 pb-3 mb-10 text-[11px] tracking-[0.2em] overflow-x-auto mt-0"
+          style={{ borderBottom: '0.5px solid #E0DCD6', paddingTop: '16px' }}
+        >
           {TABS.map((t) => (
             <button
               key={t.key}
               onClick={() => goTab(t.key)}
               type="button"
-              className={`pb-2 -mb-px transition-colors whitespace-nowrap cursor-pointer ${
-                tab === t.key ? 'border-b border-stone-800 text-stone-900' : 'text-stone-400 hover:text-stone-600'
-              }`}
+              className="pb-2 -mb-px transition-colors whitespace-nowrap cursor-pointer"
+              style={{
+                color: tab === t.key ? '#2C1917' : '#8a8070',
+                borderBottom: tab === t.key ? '0.5px solid #2C1917' : 'none',
+              }}
             >
               {t.label}
             </button>

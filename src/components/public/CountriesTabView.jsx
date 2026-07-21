@@ -22,11 +22,15 @@ function FarmRow({ farm, beans, onSelectBean, onSelectFarm }) {
     <div style={{ position: 'relative' }} onMouseEnter={enter} onMouseLeave={leave}>
       <div
         onClick={onSelectFarm}
-        className="px-4 py-3 cursor-pointer hover:bg-stone-50 transition-colors flex items-center justify-between"
+        className="py-2.5 pl-4 cursor-pointer flex items-center justify-between transition-colors"
+        style={{ borderTop: '0.5px solid rgba(224,220,214,.5)' }}
       >
-        <div className="text-sm text-stone-700">{farm.name}</div>
+        <div style={{ fontSize: '10px', letterSpacing: '.04em', color: '#4a4038' }}>{farm.name}</div>
         {beans.length > 0 && (
-          <span className="text-[10px] text-stone-400 border border-stone-200 rounded-full px-2 py-0.5 flex-shrink-0 ml-3">
+          <span
+            className="flex-shrink-0 ml-3"
+            style={{ fontSize: '8px', color: '#9a9080', border: '0.5px solid #D0C8BE', borderRadius: '20px', padding: '1px 8px' }}
+          >
             豆 {beans.length}件
           </span>
         )}
@@ -152,11 +156,12 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
             key={c.slug}
             type="button"
             onClick={() => switchCountry(c.slug)}
-            className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] tracking-wide border transition-all cursor-pointer ${
+            className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] tracking-wide transition-all cursor-pointer"
+            style={
               activeSlug === c.slug
-                ? 'bg-stone-800 text-white border-stone-800'
-                : 'bg-white border-stone-300 text-stone-600 hover:border-stone-600'
-            }`}
+                ? { background: '#2C1917', color: '#F8F6F2', border: '0.5px solid #2C1917' }
+                : { background: 'transparent', color: '#6a6258', border: '0.5px solid #D0C8BE' }
+            }
           >
             {c.flag} {c.name}
           </button>
@@ -171,35 +176,49 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
             transition: 'opacity 0.22s ease, transform 0.22s ease',
           }}
         >
-          {/* 農園数 */}
-          {countryFarms.length > 0 && (
-            <div className="flex gap-6 mb-4">
-              <div className="text-[11px] text-stone-400">
-                <span className="block text-base font-light text-stone-700">{countryFarms.length}</span>
-                農園
+          {/* 産地バンド */}
+          <div
+            className="-mx-6 mb-6 px-6 py-5 flex items-end justify-between"
+            style={{ background: '#2C1917' }}
+          >
+            <div>
+              <div className="font-display font-light tracking-[0.1em]" style={{ fontSize: '26px', color: '#F8F6F2', lineHeight: 1 }}>
+                {country.name_en ?? country.name}
+              </div>
+              <div className="mt-1.5" style={{ fontSize: '8px', letterSpacing: '.2em', color: 'rgba(248,246,242,.4)' }}>
+                {country.flag} &nbsp;{country.continent ?? ''}
               </div>
             </div>
-          )}
+            {countryFarms.length > 0 && (
+              <div className="text-right">
+                <div className="font-display font-light" style={{ fontSize: '38px', color: 'rgba(248,246,242,.14)', lineHeight: 1 }}>
+                  {countryFarms.length}
+                </div>
+                <div style={{ fontSize: '8px', letterSpacing: '.16em', color: 'rgba(248,246,242,.3)' }}>FARMS</div>
+              </div>
+            )}
+          </div>
 
           {/* 概要 */}
           {country.overview && (
-            <p className="text-sm text-stone-600 mb-6 leading-relaxed border-l-2 border-stone-200 pl-4">
+            <p className="text-sm mb-6 leading-relaxed pl-4" style={{ color: '#5a5248', borderLeft: '1.5px solid #D0C8BE' }}>
               {country.overview}
             </p>
           )}
 
           {/* 地域アコーディオン */}
           {Object.keys(groups).length > 0 ? (
-            <div className="space-y-1">
+            <div>
               {Object.entries(groups).map(([groupKey, groupFarms]) => (
-                <div key={groupKey} className="border border-stone-200 bg-white" style={{ overflow: 'visible' }}>
+                <div key={groupKey} style={{ overflow: 'visible', borderTop: '0.5px solid #E0DCD6' }}>
                   <button
                     type="button"
                     onClick={() => toggle(groupKey)}
-                    className="w-full flex justify-between items-center px-4 py-3 text-sm font-medium text-left cursor-pointer hover:bg-stone-50 transition-colors"
+                    className="w-full flex justify-between items-center py-3 text-left cursor-pointer transition-colors"
+                    style={{ background: 'transparent' }}
                   >
-                    <span className="font-serif-jp">{groupKey}</span>
-                    <span className="text-stone-400 text-[10px] flex items-center gap-2 flex-shrink-0 ml-4">
+                    <span style={{ fontSize: '10px', letterSpacing: '.1em', color: '#1A181A' }}>{groupKey}</span>
+                    <span className="flex items-center gap-2 flex-shrink-0 ml-4" style={{ fontSize: '9px', color: '#9a9080' }}>
                       {groupFarms.length}農園
                       <span
                         style={{
@@ -213,7 +232,7 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
                     </span>
                   </button>
                   {openGroups[groupKey] && (
-                    <div className="border-t border-stone-100 divide-y divide-stone-50" style={{ overflow: 'visible' }}>
+                    <div style={{ overflow: 'visible' }}>
                       {groupFarms.map((farm) => (
                         <FarmRow
                           key={farm.slug}
@@ -229,7 +248,7 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
               ))}
             </div>
           ) : (
-            <p className="text-sm text-stone-400">農園情報がまだありません</p>
+            <p className="text-sm" style={{ color: '#9a9080' }}>農園情報がまだありません</p>
           )}
         </div>
       )}
