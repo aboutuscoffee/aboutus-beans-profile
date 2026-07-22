@@ -105,14 +105,13 @@ function MapSetup({ onWorldZoom }) {
   return null;
 }
 
-function FlyTo({ lat, lng, zoom, instant }) {
+function FlyTo({ target }) {
   const map = useMap();
   useEffect(() => {
-    if (lat != null && lng != null) {
-      if (instant) map.setView([lat, lng], zoom, { animate: false });
-      else map.flyTo([lat, lng], zoom, { duration: 1.2 });
-    }
-  }, [lat, lng, zoom, instant, map]);
+    if (!target || target.lat == null || target.lng == null) return;
+    if (target.instant) map.setView([target.lat, target.lng], target.zoom, { animate: false });
+    else map.flyTo([target.lat, target.lng], target.zoom, { duration: 1.2 });
+  }, [target, map]);
   return null;
 }
 
@@ -310,7 +309,7 @@ export default function MapView({ countries, farms, beans, onNavigate }) {
           >
             <MapSetup onWorldZoom={onSetWorldZoom} />
             <InteractionController locked={interactionLocked} />
-            {flyTarget && <FlyTo lat={flyTarget.lat} lng={flyTarget.lng} zoom={flyTarget.zoom} instant={flyTarget.instant} />}
+            {flyTarget && <FlyTo target={flyTarget} />}
 
             {/* ヒルシェード */}
             <TileLayer
