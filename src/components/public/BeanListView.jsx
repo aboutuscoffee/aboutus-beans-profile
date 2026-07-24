@@ -7,6 +7,7 @@ const PAGE_SIZE = 9;
 const STATUS_DOT = {
   'リリース中': '#443A35',
   '確認中':   '#C2BCA9',
+  '編集中':   '#C2BCA9',
   '未リリース': '#C2BCA9',
   '終売':     '#C2BCA9',
 };
