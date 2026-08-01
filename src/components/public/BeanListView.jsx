@@ -100,7 +100,7 @@ function BeanCard({ bean, onSelect }) {
       {/* 画像 */}
       <div
         className="w-full overflow-hidden mb-2.5"
-        style={{ aspectRatio: '1/1' }}
+        style={{ aspectRatio: '3/4' }}
       >
         {thumb ? (
           <img
