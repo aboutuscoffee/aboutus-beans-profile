@@ -1,7 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { STATUS_ORDER, STATUS_COLORS } from '../../constants';
 import { stripWikiLinks } from '../../utils';
-import { uploadSeal, uploadBeanImage } from '../../lib/db';
+import { uploadSeal, uploadBeanImage, parseSealUrls, serializeSealUrls } from '../../lib/db';
 import NewBadge from '../common/NewBadge';
 import TextInput from '../common/TextInput';
 import TextArea from '../common/TextArea';
@@ -16,10 +16,11 @@ const EMPTY_BEAN = {
 function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(() => (bean ? { ...bean } : { ...EMPTY_BEAN }));
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
   const [imgUploading, setImgUploading] = useState(false);
   const [imgError, setImgError] = useState('');
+  const [sealUploading, setSealUploading] = useState([false, false]);
+  const [sealError, setSealError] = useState('');
+  const dragIndex = useRef(null);
 
   const handleImageUpload = async (file) => {
     if (!file || !form.id) return;
@@ -36,23 +37,42 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   };
 
   const handleImageDelete = (index) => {
-    const next = (form.image_urls ?? []).filter((_, i) => i !== index);
+    set('image_urls', (form.image_urls ?? []).filter((_, i) => i !== index));
+  };
+
+  const handleImageDrop = (dropIndex) => {
+    const from = dragIndex.current;
+    if (from === null || from === dropIndex) return;
+    const next = [...(form.image_urls ?? [])];
+    const [moved] = next.splice(from, 1);
+    next.splice(dropIndex, 0, moved);
+    dragIndex.current = null;
     set('image_urls', next);
   };
 
-  const handleSealUpload = async (e) => {
+  const sealUrls = parseSealUrls(form.seal_url);
+
+  const handleSealUpload = async (e, slotIndex) => {
     const file = e.target.files?.[0];
     if (!file || !form.id) return;
-    setUploading(true);
-    setUploadError('');
+    setSealUploading((s) => s.map((v, i) => i === slotIndex ? true : v));
+    setSealError('');
     try {
-      const url = await uploadSeal(form.id, file);
-      set('seal_url', url);
+      const url = await uploadSeal(form.id, file, slotIndex);
+      const next = [...sealUrls];
+      next[slotIndex] = url;
+      set('seal_url', serializeSealUrls(next[0], next[1]));
     } catch (err) {
-      setUploadError(err.message);
+      setSealError(err.message);
     } finally {
-      setUploading(false);
+      setSealUploading((s) => s.map((v, i) => i === slotIndex ? false : v));
     }
+  };
+
+  const handleSealDelete = (slotIndex) => {
+    const next = [...sealUrls];
+    next[slotIndex] = '';
+    set('seal_url', serializeSealUrls(next[0], next[1]));
   };
 
   return (
@@ -97,17 +117,22 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
         {!form.id ? (
           <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
         ) : (
-          <div className="flex gap-3 flex-wrap">
+          <div className="flex gap-3 flex-wrap items-start">
             {(form.image_urls ?? []).map((url, i) => (
-              <div key={i} className="relative w-24 h-24 border border-stone-200 overflow-hidden">
-                <img src={url} alt="" className="w-full h-full object-cover" />
+              <div
+                key={url}
+                draggable
+                onDragStart={() => { dragIndex.current = i; }}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={() => handleImageDrop(i)}
+                className="relative w-24 h-24 border border-stone-200 overflow-hidden cursor-grab active:cursor-grabbing"
+              >
+                <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
                 <button
                   type="button"
                   onClick={() => handleImageDelete(i)}
                   className="absolute top-0.5 right-0.5 bg-white text-red-400 hover:text-red-600 text-[10px] leading-none p-0.5 cursor-pointer"
-                >
-                  ✕
-                </button>
+                >✕</button>
               </div>
             ))}
             <label className="w-24 h-24 border border-stone-200 flex items-center justify-center cursor-pointer hover:bg-stone-50">
@@ -121,30 +146,38 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
 
       {/* シールデータ */}
       <div className="border-t border-stone-200 pt-4">
-        <span className="block text-[11px] tracking-widest text-stone-500 mb-2">シールデータ（PDF / 画像）</span>
-        {form.seal_url && (
-          <div className="flex items-center gap-3 mb-2">
-            <a href={form.seal_url} target="_blank" rel="noreferrer"
-              className="text-xs underline text-stone-600 truncate max-w-xs">
-              現在のファイルを確認
-            </a>
-            <button type="button" onClick={() => set('seal_url', '')}
-              className="text-[10px] text-red-400 hover:text-red-600 cursor-pointer">
-              削除
-            </button>
-          </div>
-        )}
+        <span className="block text-[11px] tracking-widest text-stone-500 mb-3">シールデータ（PDF / 画像）最大2件</span>
         {!form.id ? (
           <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
         ) : (
-          <label className="cursor-pointer">
-            <span className={`inline-block text-xs border px-4 py-1.5 transition-colors ${uploading ? 'border-stone-200 text-stone-300' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
-              {uploading ? 'アップロード中...' : 'ファイルを選択'}
-            </span>
-            <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai" onChange={handleSealUpload} disabled={uploading} className="hidden" />
-          </label>
+          <div className="space-y-3">
+            {[0, 1].map((slotIndex) => (
+              <div key={slotIndex} className="flex items-center gap-3">
+                <span className="text-[11px] text-stone-400 w-10">#{slotIndex + 1}</span>
+                {sealUrls[slotIndex] ? (
+                  <>
+                    <a href={sealUrls[slotIndex]} target="_blank" rel="noreferrer"
+                      className="text-xs underline text-stone-600 truncate max-w-[180px]">
+                      ファイルを確認
+                    </a>
+                    <button type="button" onClick={() => handleSealDelete(slotIndex)}
+                      className="text-[10px] text-red-400 hover:text-red-600 cursor-pointer flex-shrink-0">
+                      削除
+                    </button>
+                  </>
+                ) : (
+                  <label className="cursor-pointer">
+                    <span className={`inline-block text-xs border px-4 py-1.5 transition-colors ${sealUploading[slotIndex] ? 'border-stone-200 text-stone-300' : 'border-stone-400 hover:border-stone-700'}`}>
+                      {sealUploading[slotIndex] ? 'アップロード中...' : 'ファイルを選択'}
+                    </span>
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai" onChange={e => handleSealUpload(e, slotIndex)} disabled={sealUploading[slotIndex]} className="hidden" />
+                  </label>
+                )}
+              </div>
+            ))}
+          </div>
         )}
-        {uploadError && <p className="text-[11px] text-red-500 mt-1">{uploadError}</p>}
+        {sealError && <p className="text-[11px] text-red-500 mt-1">{sealError}</p>}
       </div>
 
       <div className="flex gap-3 pt-4 flex-wrap">

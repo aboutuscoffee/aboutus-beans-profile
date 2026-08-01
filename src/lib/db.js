@@ -38,13 +38,29 @@ export async function upsertBean(bean) {
   if (error) throw new Error(error.message);
 }
 
-export async function uploadSeal(beanId, file) {
+export async function uploadSeal(beanId, file, index = 0) {
   const ext = file.name.split('.').pop();
-  const path = `${beanId}.${ext}`;
+  const path = `${beanId}_seal${index + 1}_${Date.now()}.${ext}`;
   const { error: upErr } = await supabase.storage.from('seals').upload(path, file, { upsert: true });
   if (upErr) throw new Error(upErr.message);
   const { data } = supabase.storage.from('seals').getPublicUrl(path);
   return data.publicUrl;
+}
+
+export function parseSealUrls(sealUrl) {
+  if (!sealUrl) return ['', ''];
+  try {
+    const arr = JSON.parse(sealUrl);
+    return [arr[0] ?? '', arr[1] ?? ''];
+  } catch {
+    return [sealUrl, ''];
+  }
+}
+
+export function serializeSealUrls(url0, url1) {
+  if (!url0 && !url1) return '';
+  if (url0 && !url1) return url0;
+  return JSON.stringify([url0, url1].filter(Boolean));
 }
 
 export async function deleteSeal(beanId, ext) {

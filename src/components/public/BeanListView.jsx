@@ -107,7 +107,7 @@ function BeanCard({ bean, onSelect }) {
             src={thumb}
             alt=""
             className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-            style={{ objectFit: 'contain', mixBlendMode: 'multiply' }}
+            style={{ objectFit: 'cover', mixBlendMode: 'multiply' }}
           />
         ) : null}
       </div>

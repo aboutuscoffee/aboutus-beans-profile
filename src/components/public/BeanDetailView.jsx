@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { STATUS_COLORS } from '../../constants';
+import { parseSealUrls } from '../../lib/db';
 
 function CollapsibleText({ children }) {
   const [expanded, setExpanded] = useState(false);
@@ -51,15 +52,20 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
           <Field label="精製方法" value={<WikiText text={bean.process} onNavigate={onNavigate} />} />
           <Field label="テロワール" value={bean.terroir ? <WikiText text={bean.terroir} onNavigate={onNavigate} /> : null} />
         </dl>
-        {bean.seal_url && (
-          <a
-            href={bean.seal_url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center gap-2 text-xs border border-stone-400 px-4 py-2 mb-6 hover:border-stone-700 transition-colors"
-          >
-            🏷 シールデータをダウンロード
-          </a>
+        {parseSealUrls(bean.seal_url).filter(Boolean).length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {parseSealUrls(bean.seal_url).filter(Boolean).map((url, i) => (
+              <a
+                key={i}
+                href={url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 text-xs border border-stone-400 px-4 py-2 hover:border-stone-700 transition-colors"
+              >
+                🏷 シールデータをダウンロード{parseSealUrls(bean.seal_url).filter(Boolean).length > 1 ? ` #${i + 1}` : ''}
+              </a>
+            ))}
+          </div>
         )}
         <SectionBlock title="概要">
           <CollapsibleText>
