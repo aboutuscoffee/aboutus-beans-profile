@@ -5,6 +5,8 @@ import { uploadSeal, uploadStandaloneSeal, upsertItem, deleteItem, upsertBean } 
 function BeanSeals({ beans, updateBeans }) {
   const [uploading, setUploading] = useState(null);
   const [error, setError] = useState('');
+  const [editingLabel, setEditingLabel] = useState(null); // bean.id
+  const [labelInput, setLabelInput] = useState('');
 
   const beansWithSeal = beans.filter(b => b.seal_url);
   const beansWithoutSeal = beans.filter(b => !b.seal_url);
@@ -32,6 +34,18 @@ function BeanSeals({ beans, updateBeans }) {
     updateBeans(beans.map(b => String(b.id) === String(bean.id) ? updated : b));
   };
 
+  const startEditLabel = (bean) => {
+    setEditingLabel(bean.id);
+    setLabelInput(bean.seal_name ?? '');
+  };
+
+  const saveLabel = async (bean) => {
+    const updated = { ...bean, seal_name: labelInput.trim() };
+    await upsertBean(updated);
+    updateBeans(beans.map(b => String(b.id) === String(bean.id) ? updated : b));
+    setEditingLabel(null);
+  };
+
   return (
     <div>
       {error && <p className="text-xs text-red-500 mb-4">{error}</p>}
@@ -42,24 +56,45 @@ function BeanSeals({ beans, updateBeans }) {
         ) : (
           <div className="space-y-2">
             {beansWithSeal.map(bean => (
-              <div key={bean.id} className="flex items-center gap-3 py-2 border-b border-stone-100 flex-wrap">
-                <span className="text-sm flex-1 min-w-0 truncate">{bean.name}</span>
-                <a href={bean.seal_url} target="_blank" rel="noreferrer"
-                  className="text-xs underline text-stone-600 whitespace-nowrap">
-                  開く / 印刷
-                </a>
-                <label className="cursor-pointer">
-                  <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
-                    {uploading === bean.id ? '更新中...' : '差し替え'}
-                  </span>
-                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
-                    onChange={e => handleUpload(bean, e.target.files?.[0])}
-                    disabled={uploading === bean.id} className="hidden" />
-                </label>
-                <button type="button" onClick={() => handleDelete(bean)}
-                  className="text-xs text-red-400 hover:text-red-600 cursor-pointer whitespace-nowrap">
-                  削除
-                </button>
+              <div key={bean.id} className="py-2 border-b border-stone-100">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {editingLabel === bean.id ? (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        value={labelInput}
+                        onChange={e => setLabelInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') saveLabel(bean); if (e.key === 'Escape') setEditingLabel(null); }}
+                        placeholder={bean.name}
+                        autoFocus
+                        className="flex-1 min-w-0 bg-transparent border-b border-stone-400 focus:border-stone-700 outline-none py-0.5 text-sm"
+                      />
+                      <button type="button" onClick={() => saveLabel(bean)} className="text-[11px] border border-stone-700 px-2 py-0.5 cursor-pointer">保存</button>
+                      <button type="button" onClick={() => setEditingLabel(null)} className="text-[11px] text-stone-400 cursor-pointer">✕</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span className="text-sm truncate">{bean.seal_name || bean.name}</span>
+                      {bean.seal_name && <span className="text-[10px] text-stone-400 truncate">({bean.name})</span>}
+                      <button type="button" onClick={() => startEditLabel(bean)} className="text-[10px] text-stone-400 hover:text-stone-600 cursor-pointer flex-shrink-0">ラベル編集</button>
+                    </div>
+                  )}
+                  <a href={bean.seal_url} target="_blank" rel="noreferrer"
+                    className="text-xs underline text-stone-600 whitespace-nowrap">
+                    開く / 印刷
+                  </a>
+                  <label className="cursor-pointer">
+                    <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
+                      {uploading === bean.id ? '更新中...' : '差し替え'}
+                    </span>
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
+                      onChange={e => handleUpload(bean, e.target.files?.[0])}
+                      disabled={uploading === bean.id} className="hidden" />
+                  </label>
+                  <button type="button" onClick={() => handleDelete(bean)}
+                    className="text-xs text-red-400 hover:text-red-600 cursor-pointer whitespace-nowrap">
+                    削除
+                  </button>
+                </div>
               </div>
             ))}
           </div>

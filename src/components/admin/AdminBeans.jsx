@@ -10,7 +10,7 @@ const EMPTY_BEAN = {
   name: '', origin: '', region: '', variety: '', altitude: '', process: '', terroir: '', producer: '',
   status: '未リリース', is_new: false, price: 0,
   description_ja: '', description_en: '', taste_ja: '', taste_en: '', detail_ja: '', detail_en: '',
-  image_urls: [],
+  image_urls: [], seal_name: '',
 };
 
 function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
@@ -147,6 +147,7 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
       {/* シールデータ */}
       <div className="border-t border-stone-200 pt-4">
         <span className="block text-[11px] tracking-widest text-stone-500 mb-3">シールデータ（PDF / 画像）最大2件</span>
+        <TextInput label="シール管理用ラベル（省略時は豆名で表示）" value={form.seal_name ?? ''} onChange={(v) => set('seal_name', v)} />
         {!form.id ? (
           <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
         ) : (
@@ -205,11 +206,18 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   );
 }
 
-export default function AdminBeans({ beans, updateBeans }) {
-  const [view, setView] = useState('list');
-  const [editTarget, setEditTarget] = useState(null);
+export default function AdminBeans({ beans, updateBeans, initialEditBean }) {
+  const [view, setView] = useState(initialEditBean ? 'edit' : 'list');
+  const [editTarget, setEditTarget] = useState(initialEditBean ?? null);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [collapsed, setCollapsed] = useState(new Set());
+
+  const toggleCountry = (key) => setCollapsed((prev) => {
+    const next = new Set(prev);
+    next.has(key) ? next.delete(key) : next.add(key);
+    return next;
+  });
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -225,6 +233,16 @@ export default function AdminBeans({ beans, updateBeans }) {
         return sa !== sb ? sa - sb : (b.price || 0) - (a.price || 0);
       });
   }, [beans, search, filterStatus]);
+
+  const grouped = useMemo(() => {
+    const map = new Map();
+    filtered.forEach((bean) => {
+      const key = stripWikiLinks(bean.origin).trim() || '産地未設定';
+      if (!map.has(key)) map.set(key, []);
+      map.get(key).push(bean);
+    });
+    return [...map.entries()];
+  }, [filtered]);
 
   const save = (form) => {
     let next;
@@ -287,50 +305,66 @@ export default function AdminBeans({ beans, updateBeans }) {
           ))}
         </select>
       </div>
-      <div className="space-y-2">
-        {filtered.map((bean) => (
-          <div
-            key={bean.id}
-            className={`border-l-2 ${STATUS_COLORS[bean.status] || 'border-l-stone-300'} pl-4 py-3 ${
-              bean.status === '終売' ? 'opacity-60' : ''
-            }`}
-          >
-            <div className="flex items-start gap-2 flex-wrap">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  {bean.is_new && <NewBadge />}
-                  <span className="font-serif-jp text-sm">{bean.name}</span>
-                </div>
-                <div className="text-xs text-stone-500 mt-0.5">{stripWikiLinks(bean.origin)}</div>
+      <div className="space-y-4">
+        {grouped.map(([country, countryBeans]) => (
+          <div key={country}>
+            <button
+              type="button"
+              onClick={() => toggleCountry(country)}
+              className="flex items-center gap-2 w-full text-left py-2 border-b border-stone-200 mb-2 cursor-pointer hover:text-stone-700"
+            >
+              <span className="text-[10px] text-stone-400 w-3">{collapsed.has(country) ? '▶' : '▼'}</span>
+              <span className="text-[11px] tracking-widest text-stone-600 font-medium">{country}</span>
+              <span className="text-[10px] text-stone-400">({countryBeans.length})</span>
+            </button>
+            {!collapsed.has(country) && (
+              <div className="space-y-2 pl-2">
+                {countryBeans.map((bean) => (
+                  <div
+                    key={bean.id}
+                    className={`border-l-2 ${STATUS_COLORS[bean.status] || 'border-l-stone-300'} pl-4 py-3 ${
+                      bean.status === '終売' ? 'opacity-60' : ''
+                    }`}
+                  >
+                    <div className="flex items-start gap-2 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {bean.is_new && <NewBadge />}
+                          <span className="font-serif-jp text-sm">{bean.name}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
+                        <select
+                          value={bean.status}
+                          onChange={(e) => changeStatus(bean.id, e.target.value)}
+                          className="bg-transparent border border-stone-300 outline-none px-2 py-1 text-[11px] text-stone-600"
+                        >
+                          {Object.keys(STATUS_ORDER).map((s) => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={() => toggleNew(bean.id)}
+                          className={`text-[11px] border px-2 py-1 cursor-pointer ${
+                            bean.is_new ? 'border-amber-400 text-amber-600' : 'border-stone-300 text-stone-400'
+                          }`}
+                        >
+                          NEW
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setEditTarget(bean); setView('edit'); }}
+                          className="text-[11px] border border-stone-300 px-3 py-1 hover:border-stone-600 cursor-pointer"
+                        >
+                          編集
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0 flex-wrap justify-end">
-                <select
-                  value={bean.status}
-                  onChange={(e) => changeStatus(bean.id, e.target.value)}
-                  className="bg-transparent border border-stone-300 outline-none px-2 py-1 text-[11px] text-stone-600"
-                >
-                  {Object.keys(STATUS_ORDER).map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => toggleNew(bean.id)}
-                  className={`text-[11px] border px-2 py-1 cursor-pointer ${
-                    bean.is_new ? 'border-amber-400 text-amber-600' : 'border-stone-300 text-stone-400'
-                  }`}
-                >
-                  NEW
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setEditTarget(bean); setView('edit'); }}
-                  className="text-[11px] border border-stone-300 px-3 py-1 hover:border-stone-600 cursor-pointer"
-                >
-                  編集
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         ))}
         {filtered.length === 0 && <p className="text-center text-sm text-stone-400 py-12">該当なし</p>}
