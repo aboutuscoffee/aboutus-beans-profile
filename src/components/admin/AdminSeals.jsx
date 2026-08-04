@@ -18,9 +18,9 @@ function BeanSeals({ beans, updateBeans }) {
   const [error, setError] = useState('');
   const [editingLabel, setEditingLabel] = useState(null); // bean.id
   const [labelInput, setLabelInput] = useState('');
-  const [collapsed, setCollapsed] = useState(new Set());
+  const [expanded, setExpanded] = useState(new Set());
 
-  const toggleFarm = (key) => setCollapsed((prev) => {
+  const toggleFarm = (key) => setExpanded((prev) => {
     const next = new Set(prev);
     next.has(key) ? next.delete(key) : next.add(key);
     return next;
@@ -90,11 +90,11 @@ function BeanSeals({ beans, updateBeans }) {
                   onClick={() => toggleFarm(farm)}
                   className="flex items-center gap-2 w-full text-left py-2 border-b border-stone-200 cursor-pointer hover:text-stone-700"
                 >
-                  <span className="text-[10px] text-stone-400 w-3">{collapsed.has(farm) ? '▶' : '▼'}</span>
+                  <span className="text-[10px] text-stone-400 w-3">{!expanded.has(farm) ? '▶' : '▼'}</span>
                   <span className="text-[11px] tracking-widest text-stone-600 font-medium">{farm}</span>
                   <span className="text-[10px] text-stone-400">({farmBeans.length})</span>
                 </button>
-                {!collapsed.has(farm) && (
+                {!!expanded.has(farm) && (
                   <div className="space-y-0 pl-3">
                     {farmBeans.map(bean => (
                       <div key={bean.id} className="py-2 border-b border-stone-100">
@@ -149,16 +149,37 @@ function BeanSeals({ beans, updateBeans }) {
         <p className="text-[11px] tracking-widest text-stone-400 mb-3">未アップロード（{beansWithoutSeal.length}件）</p>
         <div className="space-y-2">
           {beansWithoutSeal.map(bean => (
-            <div key={bean.id} className="flex items-center gap-3 py-2 border-b border-stone-100 flex-wrap">
-              <span className="text-sm flex-1 min-w-0 truncate text-stone-400">{bean.name}</span>
-              <label className="cursor-pointer">
-                <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
-                  {uploading === bean.id ? 'アップロード中...' : 'アップロード'}
-                </span>
-                <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
-                  onChange={e => handleUpload(bean, e.target.files?.[0])}
-                  disabled={uploading === bean.id} className="hidden" />
-              </label>
+            <div key={bean.id} className="py-2 border-b border-stone-100">
+              <div className="flex items-center gap-3 flex-wrap">
+                {editingLabel === bean.id ? (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <input
+                      value={labelInput}
+                      onChange={e => setLabelInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveLabel(bean); if (e.key === 'Escape') setEditingLabel(null); }}
+                      placeholder={bean.name}
+                      autoFocus
+                      className="flex-1 min-w-0 bg-transparent border-b border-stone-400 focus:border-stone-700 outline-none py-0.5 text-sm text-stone-400"
+                    />
+                    <button type="button" onClick={() => saveLabel(bean)} className="text-[11px] border border-stone-700 px-2 py-0.5 cursor-pointer">保存</button>
+                    <button type="button" onClick={() => setEditingLabel(null)} className="text-[11px] text-stone-400 cursor-pointer">✕</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-sm truncate text-stone-400">{bean.seal_name || bean.name}</span>
+                    {bean.seal_name && <span className="text-[10px] text-stone-300 truncate">({bean.name})</span>}
+                    <button type="button" onClick={() => startEditLabel(bean)} className="text-[10px] text-stone-400 hover:text-stone-600 cursor-pointer flex-shrink-0">ラベル編集</button>
+                  </div>
+                )}
+                <label className="cursor-pointer">
+                  <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
+                    {uploading === bean.id ? 'アップロード中...' : 'アップロード'}
+                  </span>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
+                    onChange={e => handleUpload(bean, e.target.files?.[0])}
+                    disabled={uploading === bean.id} className="hidden" />
+                </label>
+              </div>
             </div>
           ))}
         </div>

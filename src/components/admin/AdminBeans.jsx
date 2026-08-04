@@ -146,8 +146,6 @@ function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
 
       {/* シールデータ */}
       <div className="border-t border-stone-200 pt-4">
-        <span className="block text-[11px] tracking-widest text-stone-500 mb-3">シールデータ（PDF / 画像）最大2件</span>
-        <TextInput label="シール管理用ラベル（省略時は豆名で表示）" value={form.seal_name ?? ''} onChange={(v) => set('seal_name', v)} />
         {!form.id ? (
           <p className="text-[11px] text-stone-400">※ 先に保存してからアップロードできます</p>
         ) : (
