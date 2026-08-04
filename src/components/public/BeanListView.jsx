@@ -99,15 +99,15 @@ function BeanCard({ bean, onSelect }) {
     >
       {/* 画像 */}
       <div
-        className="w-full overflow-hidden mb-2.5"
-        style={{ aspectRatio: '3/4' }}
+        className="w-full mb-2.5 flex items-center justify-center"
+        style={{ aspectRatio: '3/4', background: '#f5f1ec' }}
       >
         {thumb ? (
           <img
             src={thumb}
             alt=""
             className="w-full h-full transition-transform duration-500 group-hover:scale-105"
-            style={{ objectFit: 'cover', mixBlendMode: 'multiply' }}
+            style={{ objectFit: 'contain', mixBlendMode: 'multiply' }}
           />
         ) : null}
       </div>
