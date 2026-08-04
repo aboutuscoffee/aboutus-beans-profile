@@ -117,7 +117,7 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
           <div className="flex gap-2 mt-6 flex-wrap">
             {bean.image_urls.filter(Boolean).map((url, i) => (
               <a key={i} href={url} target="_blank" rel="noreferrer">
-                <img src={url} alt="" className="h-28 w-28 object-cover border border-stone-200 hover:opacity-80 transition-opacity" />
+                <img src={url} alt="" className="border border-stone-200 hover:opacity-80 transition-opacity" style={{ maxHeight: '160px', width: 'auto', display: 'block' }} />
               </a>
             ))}
           </div>

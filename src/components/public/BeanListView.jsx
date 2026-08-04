@@ -98,18 +98,19 @@ function BeanCard({ bean, onSelect }) {
       style={{ opacity: faded ? 0.5 : 1 }}
     >
       {/* 画像 */}
-      {thumb ? (
-        <div className="w-full mb-2.5 overflow-hidden">
+      <div
+        className="w-full overflow-hidden mb-2.5"
+        style={{ aspectRatio: '3/4' }}
+      >
+        {thumb ? (
           <img
             src={thumb}
             alt=""
-            className="w-full transition-transform duration-500 group-hover:scale-105"
-            style={{ display: 'block', height: 'auto', mixBlendMode: 'multiply' }}
+            className="w-full h-full transition-transform duration-500 group-hover:scale-105"
+            style={{ objectFit: 'cover', mixBlendMode: 'multiply' }}
           />
-        </div>
-      ) : (
-        <div className="w-full mb-2.5" style={{ aspectRatio: '3/4', background: '#f5f1ec' }} />
-      )}
+        ) : null}
+      </div>
 
       {/* ステータスドット */}
       <div className="flex items-center gap-1.5 mb-1">
