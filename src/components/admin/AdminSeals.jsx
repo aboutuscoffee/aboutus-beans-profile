@@ -27,7 +27,9 @@ function BeanSeals({ beans, updateBeans }) {
   });
 
   const beansWithSeal = beans.filter(b => b.seal_url);
-  const beansWithoutSeal = beans.filter(b => !b.seal_url);
+  const beansWithoutSeal = beans
+    .filter(b => !b.seal_url)
+    .sort((a, b) => (a.status === '終売' ? 1 : 0) - (b.status === '終売' ? 1 : 0));
 
   const groupedWithSeal = useMemo(() => {
     const map = new Map();
@@ -77,6 +79,46 @@ function BeanSeals({ beans, updateBeans }) {
   return (
     <div>
       {error && <p className="text-xs text-red-500 mb-4">{error}</p>}
+      <div className="mb-8">
+        <p className="text-[11px] tracking-widest text-stone-400 mb-3">未アップロード（{beansWithoutSeal.length}件）</p>
+        <div className="space-y-2">
+          {beansWithoutSeal.map(bean => (
+            <div key={bean.id} className="py-2 border-b border-stone-100">
+              <div className="flex items-center gap-3 flex-wrap">
+                {editingLabel === bean.id ? (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <input
+                      value={labelInput}
+                      onChange={e => setLabelInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') saveLabel(bean); if (e.key === 'Escape') setEditingLabel(null); }}
+                      placeholder={bean.name}
+                      autoFocus
+                      className="flex-1 min-w-0 bg-transparent border-b border-stone-400 focus:border-stone-700 outline-none py-0.5 text-sm text-stone-400"
+                    />
+                    <button type="button" onClick={() => saveLabel(bean)} className="text-[11px] border border-stone-700 px-2 py-0.5 cursor-pointer">保存</button>
+                    <button type="button" onClick={() => setEditingLabel(null)} className="text-[11px] text-stone-400 cursor-pointer">✕</button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className={`text-sm truncate ${bean.status === '終売' ? 'text-stone-300' : 'text-stone-400'}`}>{bean.seal_name || bean.name}</span>
+                    {bean.seal_name && <span className="text-[10px] text-stone-300 truncate">({bean.name})</span>}
+                    {bean.status === '終売' && <span className="text-[10px] text-stone-300">終売</span>}
+                    <button type="button" onClick={() => startEditLabel(bean)} className="text-[10px] text-stone-400 hover:text-stone-600 cursor-pointer flex-shrink-0">ラベル編集</button>
+                  </div>
+                )}
+                <label className="cursor-pointer">
+                  <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
+                    {uploading === bean.id ? 'アップロード中...' : 'アップロード'}
+                  </span>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
+                    onChange={e => handleUpload(bean, e.target.files?.[0])}
+                    disabled={uploading === bean.id} className="hidden" />
+                </label>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="mb-6">
         <p className="text-[11px] tracking-widest text-stone-400 mb-3">アップロード済み（{beansWithSeal.length}件）</p>
         {beansWithSeal.length === 0 ? (
@@ -144,45 +186,6 @@ function BeanSeals({ beans, updateBeans }) {
             ))}
           </div>
         )}
-      </div>
-      <div>
-        <p className="text-[11px] tracking-widest text-stone-400 mb-3">未アップロード（{beansWithoutSeal.length}件）</p>
-        <div className="space-y-2">
-          {beansWithoutSeal.map(bean => (
-            <div key={bean.id} className="py-2 border-b border-stone-100">
-              <div className="flex items-center gap-3 flex-wrap">
-                {editingLabel === bean.id ? (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <input
-                      value={labelInput}
-                      onChange={e => setLabelInput(e.target.value)}
-                      onKeyDown={e => { if (e.key === 'Enter') saveLabel(bean); if (e.key === 'Escape') setEditingLabel(null); }}
-                      placeholder={bean.name}
-                      autoFocus
-                      className="flex-1 min-w-0 bg-transparent border-b border-stone-400 focus:border-stone-700 outline-none py-0.5 text-sm text-stone-400"
-                    />
-                    <button type="button" onClick={() => saveLabel(bean)} className="text-[11px] border border-stone-700 px-2 py-0.5 cursor-pointer">保存</button>
-                    <button type="button" onClick={() => setEditingLabel(null)} className="text-[11px] text-stone-400 cursor-pointer">✕</button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <span className="text-sm truncate text-stone-400">{bean.seal_name || bean.name}</span>
-                    {bean.seal_name && <span className="text-[10px] text-stone-300 truncate">({bean.name})</span>}
-                    <button type="button" onClick={() => startEditLabel(bean)} className="text-[10px] text-stone-400 hover:text-stone-600 cursor-pointer flex-shrink-0">ラベル編集</button>
-                  </div>
-                )}
-                <label className="cursor-pointer">
-                  <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
-                    {uploading === bean.id ? 'アップロード中...' : 'アップロード'}
-                  </span>
-                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
-                    onChange={e => handleUpload(bean, e.target.files?.[0])}
-                    disabled={uploading === bean.id} className="hidden" />
-                </label>
-              </div>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );

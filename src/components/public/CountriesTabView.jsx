@@ -9,7 +9,64 @@ const COUNTRY_NAME_EN = {
   'ペルー': 'Peru', 'ボリビア': 'Bolivia', 'エルサルバドル': 'El Salvador',
   'ニカラグア': 'Nicaragua', 'メキシコ': 'Mexico', 'タイ': 'Thailand',
   'ミャンマー': 'Myanmar', 'インド': 'India', 'パプアニューギニア': 'Papua New Guinea',
+  'エクアドル': 'Ecuador',
 };
+
+function parseChips(raw) {
+  if (!raw) return [];
+  try { return JSON.parse(raw); } catch { return []; }
+}
+
+function FlavorChips({ chips }) {
+  if (!chips?.length) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mb-5">
+      {chips.map((chip) => (
+        <span
+          key={chip}
+          style={{
+            fontSize: '10px',
+            letterSpacing: '0.04em',
+            color: '#5a4838',
+            background: 'rgba(90,72,56,0.07)',
+            border: '0.5px solid rgba(90,72,56,0.18)',
+            borderRadius: '20px',
+            padding: '3px 10px',
+          }}
+        >
+          {chip}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function InfoSection({ label, children }) {
+  return (
+    <div className="mb-5">
+      <div
+        style={{
+          fontSize: '8px',
+          letterSpacing: '0.18em',
+          color: 'rgba(67,58,53,0.4)',
+          textTransform: 'uppercase',
+          marginBottom: '6px',
+        }}
+      >
+        {label}
+      </div>
+      <div
+        style={{
+          fontSize: '12px',
+          lineHeight: 1.8,
+          color: '#5a5248',
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function beansForFarm(beans, farmSlug) {
   return beans.filter(
@@ -158,6 +215,8 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
     }, 130);
   };
 
+  const chips = parseChips(country?.flavor_chips);
+
   return (
     <div>
       {/* 国ピルタブ */}
@@ -189,7 +248,7 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
         >
           {/* 産地バンド */}
           <div
-            className="-mx-6 mb-6 px-6 py-3 flex items-end justify-between"
+            className="-mx-6 mb-6 px-6 py-4 flex items-end justify-between"
             style={{ background: 'rgba(67,58,53,0.08)' }}
           >
             <div>
@@ -200,21 +259,61 @@ export default function CountriesTabView({ countries, farms, beans, onNavigate }
                 {country.flag} &nbsp;{country.continent ?? ''}
               </div>
             </div>
-            {countryFarms.length > 0 && (
-              <div className="text-right">
-                <div className="font-display font-light" style={{ fontSize: '38px', color: 'rgba(67,58,53,0.14)', lineHeight: 1 }}>
-                  {countryFarms.length}
+            <div className="text-right flex flex-col items-end gap-2">
+              {country.altitude && (
+                <div style={{ fontSize: '9px', letterSpacing: '0.08em', color: 'rgba(67,58,53,0.5)' }}>
+                  ↑ {country.altitude}
                 </div>
-                <div style={{ fontSize: '8px', letterSpacing: '.16em', color: 'rgba(67,58,53,0.3)' }}>FARMS</div>
-              </div>
-            )}
+              )}
+              {countryFarms.length > 0 && (
+                <div>
+                  <div className="font-display font-light" style={{ fontSize: '32px', color: 'rgba(67,58,53,0.14)', lineHeight: 1 }}>
+                    {countryFarms.length}
+                  </div>
+                  <div style={{ fontSize: '8px', letterSpacing: '.16em', color: 'rgba(67,58,53,0.3)' }}>FARMS</div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 概要 */}
           {country.overview && (
-            <p className="text-sm mb-6 leading-relaxed pl-4" style={{ color: '#5a5248', borderLeft: '1.5px solid #D0C8BE' }}>
+            <p className="text-sm mb-5 leading-relaxed pl-4" style={{ color: '#5a5248', borderLeft: '1.5px solid #D0C8BE' }}>
               {country.overview}
             </p>
+          )}
+
+          {/* フレーバーチップ */}
+          <FlavorChips chips={chips} />
+
+          {/* テロワール */}
+          {country.terroir && (
+            <InfoSection label="Terroir — テロワール">
+              {country.terroir}
+            </InfoSection>
+          )}
+
+          {/* 生産システム */}
+          {country.production_system && (
+            <InfoSection label="Production System — 生産システム">
+              {country.production_system}
+            </InfoSection>
+          )}
+
+          {/* 農園セクション仕切り */}
+          {countryFarms.length > 0 && (
+            <div
+              style={{
+                fontSize: '8px',
+                letterSpacing: '0.18em',
+                color: 'rgba(67,58,53,0.4)',
+                textTransform: 'uppercase',
+                marginBottom: '8px',
+                marginTop: '8px',
+              }}
+            >
+              Farms — 農園
+            </div>
           )}
 
           {/* 地域アコーディオン */}

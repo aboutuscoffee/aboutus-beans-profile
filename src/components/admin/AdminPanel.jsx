@@ -24,7 +24,10 @@ const COUNTRY_FIELDS = [
   { key: 'region', label: '主な産地地域' },
   { key: 'altitude', label: '標高帯' },
   { key: 'climate', label: '気候' },
-  { key: 'overview', label: '概要', type: 'textarea', rows: 3 },
+  { key: 'overview', label: '概要（1〜2文）', type: 'textarea', rows: 2 },
+  { key: 'flavor_chips', label: 'フレーバーチップ（JSON配列例: ["チョコレート","オレンジ"]）' },
+  { key: 'terroir', label: 'テロワール', type: 'textarea', rows: 4 },
+  { key: 'production_system', label: '生産システム', type: 'textarea', rows: 4 },
 ];
 
 const PROCESS_FIELDS = [
