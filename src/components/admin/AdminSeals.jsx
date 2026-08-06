@@ -369,14 +369,144 @@ function StandaloneSeals({ seals, updateSeals }) {
   );
 }
 
+const ACTIVE_STATUSES = ['リリース中', '未リリース', '確認中'];
+
+function AllPendingView({ beans, updateBeans, seals, onGoToStandalone }) {
+  const [uploading, setUploading] = useState(null);
+  const [error, setError] = useState('');
+  const [editingLabel, setEditingLabel] = useState(null);
+  const [labelInput, setLabelInput] = useState('');
+
+  const pendingBeans = beans.filter(b => !b.seal_url && ACTIVE_STATUSES.includes(b.status));
+  const pendingSeals = seals.filter(s => !s.url);
+
+  const handleUpload = async (bean, file) => {
+    if (!file) return;
+    setUploading(bean.id);
+    setError('');
+    try {
+      const url = await uploadSeal(bean.id, file);
+      const updated = { ...bean, seal_url: url };
+      await upsertBean(updated);
+      updateBeans(beans.map(b => String(b.id) === String(bean.id) ? updated : b));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const startEditLabel = (bean) => { setEditingLabel(bean.id); setLabelInput(bean.seal_name ?? ''); };
+  const saveLabel = async (bean) => {
+    const updated = { ...bean, seal_name: labelInput.trim() };
+    await upsertBean(updated);
+    updateBeans(beans.map(b => String(b.id) === String(bean.id) ? updated : b));
+    setEditingLabel(null);
+  };
+
+  const STATUS_BADGE = { 'リリース中': '#443A35', '確認中': '#C2BCA9', '未リリース': '#C2BCA9' };
+
+  return (
+    <div>
+      {error && <p className="text-xs text-red-500 mb-4">{error}</p>}
+
+      <div className="mb-8">
+        <p className="text-[11px] tracking-widest text-stone-400 mb-3">
+          豆シール 未アップロード（{pendingBeans.length}件）
+        </p>
+        {pendingBeans.length === 0 ? (
+          <p className="text-sm text-stone-300">すべてアップロード済みです</p>
+        ) : (
+          <div className="space-y-2">
+            {pendingBeans.map(bean => (
+              <div key={bean.id} className="py-2 border-b border-stone-100">
+                <div className="flex items-center gap-3 flex-wrap">
+                  {editingLabel === bean.id ? (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <input
+                        value={labelInput}
+                        onChange={e => setLabelInput(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') saveLabel(bean); if (e.key === 'Escape') setEditingLabel(null); }}
+                        placeholder={bean.name}
+                        autoFocus
+                        className="flex-1 min-w-0 bg-transparent border-b border-stone-400 focus:border-stone-700 outline-none py-0.5 text-sm text-stone-400"
+                      />
+                      <button type="button" onClick={() => saveLabel(bean)} className="text-[11px] border border-stone-700 px-2 py-0.5 cursor-pointer">保存</button>
+                      <button type="button" onClick={() => setEditingLabel(null)} className="text-[11px] text-stone-400 cursor-pointer">✕</button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <span
+                        className="flex-shrink-0 text-[9px] px-1.5 py-0.5 rounded-full"
+                        style={{ background: STATUS_BADGE[bean.status] ?? '#C2BCA9', color: '#fff', letterSpacing: '0.04em' }}
+                      >
+                        {bean.status}
+                      </span>
+                      <span className="text-sm truncate text-stone-500">{bean.seal_name || bean.name}</span>
+                      {bean.seal_name && <span className="text-[10px] text-stone-300 truncate">({bean.name})</span>}
+                      <button type="button" onClick={() => startEditLabel(bean)} className="text-[10px] text-stone-400 hover:text-stone-600 cursor-pointer flex-shrink-0">ラベル編集</button>
+                    </div>
+                  )}
+                  <label className="cursor-pointer">
+                    <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === bean.id ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
+                      {uploading === bean.id ? 'アップロード中...' : 'アップロード'}
+                    </span>
+                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
+                      onChange={e => handleUpload(bean, e.target.files?.[0])}
+                      disabled={uploading === bean.id} className="hidden" />
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div>
+        <p className="text-[11px] tracking-widest text-stone-400 mb-3">
+          卸・ブレンド 未アップロード（{pendingSeals.length}件）
+        </p>
+        {pendingSeals.length === 0 ? (
+          <p className="text-sm text-stone-300">すべてアップロード済みです</p>
+        ) : (
+          <div className="space-y-2">
+            {pendingSeals.map(seal => (
+              <div key={seal.slug} className="py-2 border-b border-stone-100 flex items-center gap-3">
+                <span className="text-sm flex-1 min-w-0 truncate text-stone-500">{seal.name}</span>
+                <button
+                  type="button"
+                  onClick={onGoToStandalone}
+                  className="text-xs border border-stone-300 px-3 py-1 hover:border-stone-600 cursor-pointer whitespace-nowrap"
+                >
+                  編集へ
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function AdminSeals({ beans, updateBeans, seals, updateSeals }) {
-  const [section, setSection] = useState('beans');
+  const [section, setSection] = useState('pending');
+
+  const pendingBeanCount = beans.filter(b => !b.seal_url && ACTIVE_STATUSES.includes(b.status)).length;
+  const pendingSealCount = seals.filter(s => !s.url).length;
+  const pendingTotal = pendingBeanCount + pendingSealCount;
+
+  const TABS = [
+    ['pending', `未アップロード${pendingTotal > 0 ? `（${pendingTotal}）` : ''}`],
+    ['beans', '豆シール'],
+    ['standalone', '卸・オンライン・ブレンド'],
+  ];
 
   return (
     <div>
       <h2 className="font-serif-jp text-xl mb-6">シール管理</h2>
       <div className="flex gap-6 mb-6 border-b border-stone-200 pb-3">
-        {[['beans', '豆シール'], ['standalone', '卸・オンライン・ブレンド']].map(([key, label]) => (
+        {TABS.map(([key, label]) => (
           <button key={key} type="button" onClick={() => setSection(key)}
             className={`text-[11px] tracking-widest pb-2 -mb-px border-b transition-colors cursor-pointer ${
               section === key ? 'border-stone-700 text-stone-900' : 'border-transparent text-stone-400 hover:text-stone-600'
@@ -385,10 +515,16 @@ export default function AdminSeals({ beans, updateBeans, seals, updateSeals }) {
           </button>
         ))}
       </div>
-      {section === 'beans'
-        ? <BeanSeals beans={beans} updateBeans={updateBeans} />
-        : <StandaloneSeals seals={seals} updateSeals={updateSeals} />
-      }
+      {section === 'pending' && (
+        <AllPendingView
+          beans={beans}
+          updateBeans={updateBeans}
+          seals={seals}
+          onGoToStandalone={() => setSection('standalone')}
+        />
+      )}
+      {section === 'beans' && <BeanSeals beans={beans} updateBeans={updateBeans} />}
+      {section === 'standalone' && <StandaloneSeals seals={seals} updateSeals={updateSeals} />}
     </div>
   );
 }
