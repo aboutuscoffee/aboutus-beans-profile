@@ -371,7 +371,7 @@ function StandaloneSeals({ seals, updateSeals }) {
 
 const ACTIVE_STATUSES = ['リリース中', '未リリース', '確認中'];
 
-function AllPendingView({ beans, updateBeans, seals, onGoToStandalone }) {
+function AllPendingView({ beans, updateBeans, seals, updateSeals }) {
   const [uploading, setUploading] = useState(null);
   const [error, setError] = useState('');
   const [editingLabel, setEditingLabel] = useState(null);
@@ -402,6 +402,22 @@ function AllPendingView({ beans, updateBeans, seals, onGoToStandalone }) {
     await upsertBean(updated);
     updateBeans(beans.map(b => String(b.id) === String(bean.id) ? updated : b));
     setEditingLabel(null);
+  };
+
+  const handleSealUpload = async (seal, file) => {
+    if (!file) return;
+    setUploading(`seal-${seal.slug}`);
+    setError('');
+    try {
+      const url = await uploadStandaloneSeal(seal.slug, file);
+      const updated = { ...seal, url };
+      await upsertItem('seals', updated);
+      updateSeals(seals.map(s => s.slug === seal.slug ? updated : s));
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(null);
+    }
   };
 
   const STATUS_BADGE = { 'リリース中': '#443A35', '確認中': '#C2BCA9', '未リリース': '#C2BCA9' };
@@ -473,13 +489,14 @@ function AllPendingView({ beans, updateBeans, seals, onGoToStandalone }) {
             {pendingSeals.map(seal => (
               <div key={seal.slug} className="py-2 border-b border-stone-100 flex items-center gap-3">
                 <span className="text-sm flex-1 min-w-0 truncate text-stone-500">{seal.name}</span>
-                <button
-                  type="button"
-                  onClick={onGoToStandalone}
-                  className="text-xs border border-stone-300 px-3 py-1 hover:border-stone-600 cursor-pointer whitespace-nowrap"
-                >
-                  編集へ
-                </button>
+                <label className="cursor-pointer">
+                  <span className={`text-xs border px-3 py-1 whitespace-nowrap ${uploading === `seal-${seal.slug}` ? 'text-stone-300 border-stone-200' : 'border-stone-400 hover:border-stone-700 cursor-pointer'}`}>
+                    {uploading === `seal-${seal.slug}` ? 'アップロード中...' : 'アップロード'}
+                  </span>
+                  <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai"
+                    onChange={e => handleSealUpload(seal, e.target.files?.[0])}
+                    disabled={uploading === `seal-${seal.slug}`} className="hidden" />
+                </label>
               </div>
             ))}
           </div>
@@ -520,7 +537,7 @@ export default function AdminSeals({ beans, updateBeans, seals, updateSeals }) {
           beans={beans}
           updateBeans={updateBeans}
           seals={seals}
-          onGoToStandalone={() => setSection('standalone')}
+          updateSeals={updateSeals}
         />
       )}
       {section === 'beans' && <BeanSeals beans={beans} updateBeans={updateBeans} />}
