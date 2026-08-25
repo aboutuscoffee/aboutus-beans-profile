@@ -179,7 +179,7 @@ export default function PublicSite({ data, onOpenAdmin }) {
             </h1>
             <div style={{ width: '24px', height: '0.5px', background: '#2C1917', margin: '10px auto' }} />
             <p className="text-[9px] tracking-[0.26em]" style={{ color: '#5a5248' }}>
-              ABOUT US COFFEE 内部豆プロファイル集
+              社内共有用
             </p>
           </div>
         </div>
