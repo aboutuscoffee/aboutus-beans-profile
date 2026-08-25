@@ -369,7 +369,8 @@ function StandaloneSeals({ seals, updateSeals }) {
   );
 }
 
-const ACTIVE_STATUSES = ['リリース中', '未リリース', '確認中'];
+const ACTIVE_STATUSES = null; // 終売以外すべて表示
+const isActive = (status) => status !== '終売';
 
 function AllPendingView({ beans, updateBeans, seals, updateSeals }) {
   const [uploading, setUploading] = useState(null);
@@ -377,7 +378,7 @@ function AllPendingView({ beans, updateBeans, seals, updateSeals }) {
   const [editingLabel, setEditingLabel] = useState(null);
   const [labelInput, setLabelInput] = useState('');
 
-  const pendingBeans = beans.filter(b => !b.seal_url && ACTIVE_STATUSES.includes(b.status));
+  const pendingBeans = beans.filter(b => !b.seal_url && isActive(b.status));
   const pendingSeals = seals.filter(s => !s.url);
 
   const handleUpload = async (bean, file) => {
@@ -509,7 +510,7 @@ function AllPendingView({ beans, updateBeans, seals, updateSeals }) {
 export default function AdminSeals({ beans, updateBeans, seals, updateSeals }) {
   const [section, setSection] = useState('pending');
 
-  const pendingBeanCount = beans.filter(b => !b.seal_url && ACTIVE_STATUSES.includes(b.status)).length;
+  const pendingBeanCount = beans.filter(b => !b.seal_url && isActive(b.status)).length;
   const pendingSealCount = seals.filter(s => !s.url).length;
   const pendingTotal = pendingBeanCount + pendingSealCount;
 
