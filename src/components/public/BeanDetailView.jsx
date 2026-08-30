@@ -103,7 +103,7 @@ export default function BeanDetailView({ bean, onBack, onNavigate, backLabel }) 
         </SectionBlock>
         <SectionBlock title="詳細">
           {bean.detail_ja && bean.detail_ja.split(/\n+/).map((p, i) => (
-            <p key={i} className={i > 0 ? 'mt-3' : ''}>{p}</p>
+            <p key={i} className={i > 0 ? 'mt-3' : ''}><WikiText text={p} onNavigate={onNavigate} /></p>
           ))}
           {bean.detail_en && (
             <div className="text-stone-500 mt-3 italic">
