@@ -47,7 +47,7 @@ const TERM_FIELDS = [
 const TABS = ['ダッシュボード', '豆管理', 'シール管理', '画像管理', '農園管理', '産地管理', '精製方法管理', '用語集管理'];
 
 export default function AdminPanel({ data, updateBeans, updateFarms, updateCountries, updateProcesses, updateTerms, updateSeals, onLogout }) {
-  const [tab, setTab] = useState('ダッシュボード');
+  const [tab, setTab] = useState('豆管理');
 
   return (
     <div style={{ backgroundColor: '#f0ebe4', minHeight: '100vh' }}>
