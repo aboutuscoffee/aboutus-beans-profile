@@ -10,6 +10,7 @@ import TermDetailView from './TermDetailView';
 import ProjectDetailView from './ProjectDetailView';
 import MapView from './MapView';
 import SealListView from './SealListView';
+import TermsView from './TermsView';
 
 const TABS = [
   { key: 'beans', label: '豆一覧' },
@@ -143,15 +144,9 @@ export default function PublicSite({ data, onOpenAdmin }) {
     );
   } else if (tab === 'terms') {
     content = (
-      <ListSimpleView
+      <TermsView
         items={data.terms}
         onSelect={(slug) => navigateToDetail('terms', slug)}
-        renderItem={(t) => (
-          <>
-            <div className="font-serif-jp text-base">{t.name}</div>
-            <div className="text-xs text-stone-500 mt-1">{t.category}</div>
-          </>
-        )}
       />
     );
   } else if (tab === 'seals') {
