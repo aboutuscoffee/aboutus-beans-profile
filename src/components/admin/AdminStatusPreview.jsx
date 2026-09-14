@@ -10,7 +10,7 @@ import { STATUS_ORDER } from '../../constants';
 
 const STATUSES = Object.keys(STATUS_ORDER);
 
-function StatusBar({ bean, onSave }) {
+function StatusBar({ bean, onSave, onBackToList }) {
   const [status, setStatus] = useState(bean.status);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -52,6 +52,14 @@ function StatusBar({ bean, onSave }) {
           }}
         >
           {saving ? '保存中…' : saved ? '保存しました' : '保存'}
+        </button>
+        <button
+          type="button"
+          onClick={onBackToList}
+          className="text-[10px] tracking-widest px-5 py-1.5 transition-colors cursor-pointer"
+          style={{ border: '0.5px solid #3a6258', color: '#7a9880' }}
+        >
+          一覧へ戻る
         </button>
       </div>
     </div>
@@ -264,6 +272,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
           key={currentBean.id}
           bean={currentBean}
           onSave={handleSave}
+          onBackToList={() => setNavStack([])}
         />
       )}
     </div>
