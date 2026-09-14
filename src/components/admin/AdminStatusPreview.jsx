@@ -62,6 +62,8 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
   const [navStack, setNavStack] = useState([]); // [{type, id}]
   const [editTab, setEditTab] = useState('preview');
   const [localBeans, setLocalBeans] = useState(data.beans);
+  const [beanPage, setBeanPage] = useState(1);
+  const [beanSearch, setBeanSearch] = useState('');
 
   const filtered = localBeans.filter((b) => b.status === status);
   const current = navStack[navStack.length - 1] ?? null;
@@ -188,7 +190,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
       >
         {/* 豆一覧 */}
         {!current && (
-          <BeanListView beans={filtered} onSelectBean={(id) => navigateTo('beans', id)} />
+          <BeanListView beans={filtered} onSelectBean={(id) => navigateTo('beans', id)} savedPage={beanPage} onPageChange={setBeanPage} savedSearch={beanSearch} onSearchChange={setBeanSearch} />
         )}
 
         {/* 豆詳細 */}

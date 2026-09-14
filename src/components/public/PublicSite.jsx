@@ -25,8 +25,9 @@ const TABS = [
 export default function PublicSite({ data, onOpenAdmin }) {
   const [tab, setTab] = useState('beans');
   const [detail, setDetail] = useState(null);
-  // 履歴スタック: [{tab, detail}] — 遷移前の状態を積む
   const [navHistory, setNavHistory] = useState([]);
+  const [beanPage, setBeanPage] = useState(1);
+  const [beanSearch, setBeanSearch] = useState('');
 
   const navigateToDetail = (type, id) => {
     setNavHistory((prev) => [...prev, { tab, detail }]);
@@ -106,7 +107,7 @@ export default function PublicSite({ data, onOpenAdmin }) {
       />
     );
   } else if (tab === 'beans') {
-    content = <BeanListView beans={data.beans} onSelectBean={(id) => navigateToDetail('beans', id)} />;
+    content = <BeanListView beans={data.beans} onSelectBean={(id) => navigateToDetail('beans', id)} savedPage={beanPage} onPageChange={setBeanPage} savedSearch={beanSearch} onSearchChange={setBeanSearch} />;
   } else if (tab === 'countries') {
     content = (
       <CountriesTabView

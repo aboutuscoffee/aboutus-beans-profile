@@ -12,9 +12,20 @@ const STATUS_DOT = {
   '終売':     '#C2BCA9',
 };
 
-export default function BeanListView({ beans, onSelectBean }) {
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+export default function BeanListView({ beans, onSelectBean, savedPage, onPageChange, savedSearch, onSearchChange }) {
+  const [localSearch, setLocalSearch] = useState(savedSearch ?? '');
+  const [localPage, setLocalPage] = useState(savedPage ?? 1);
+
+  const search = savedSearch !== undefined ? savedSearch : localSearch;
+  const page = savedPage !== undefined ? savedPage : localPage;
+
+  const setPage = (v) => {
+    const next = typeof v === 'function' ? v(page) : v;
+    onPageChange ? onPageChange(next) : setLocalPage(next);
+  };
+  const setSearch = (v) => {
+    onSearchChange ? onSearchChange(v) : setLocalSearch(v);
+  };
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
