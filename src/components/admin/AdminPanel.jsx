@@ -57,6 +57,7 @@ export default function AdminPanel({ data, updateBeans, updateFarms, updateCount
         <AdminStatusPreview
           status={previewStatus}
           data={data}
+          updateBeans={updateBeans}
           onClose={() => setPreviewStatus(null)}
         />
       )}
