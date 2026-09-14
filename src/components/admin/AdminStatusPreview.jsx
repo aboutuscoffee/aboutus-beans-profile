@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import BeanListView from '../public/BeanListView';
 import BeanDetailView from '../public/BeanDetailView';
+import FarmDetailView from '../public/FarmDetailView';
+import ProcessDetailView from '../public/ProcessDetailView';
+import TermDetailView from '../public/TermDetailView';
+import CountryDetailView from '../public/CountryDetailView';
 import AdminBeanForm from './AdminBeanForm';
 import { STATUS_ORDER } from '../../constants';
 
@@ -55,26 +59,70 @@ function StatusBar({ bean, onSave }) {
 }
 
 export default function AdminStatusPreview({ status, data, updateBeans, onClose }) {
-  const [detail, setDetail] = useState(null);
-  const [editTab, setEditTab] = useState('preview'); // 'preview' | 'edit'
+  const [navStack, setNavStack] = useState([]); // [{type, id}]
+  const [editTab, setEditTab] = useState('preview');
   const [localBeans, setLocalBeans] = useState(data.beans);
-  const filtered = localBeans.filter((b) => b.status === status);
 
-  const openBean = (id) => {
-    const bean = localBeans.find((b) => String(b.id) === String(id));
-    if (bean) { setDetail(bean); setEditTab('preview'); }
-  };
+  const filtered = localBeans.filter((b) => b.status === status);
+  const current = navStack[navStack.length - 1] ?? null;
+  const prev = navStack[navStack.length - 2] ?? null;
 
   const navigateTo = (type, id) => {
-    if (type === 'beans') openBean(id);
+    setNavStack((s) => [...s, { type, id }]);
+    setEditTab('preview');
+  };
+
+  const goBack = () => {
+    setNavStack((s) => s.slice(0, -1));
+    setEditTab('preview');
   };
 
   const handleSave = async (updated) => {
     const next = localBeans.map((b) => (String(b.id) === String(updated.id) ? updated : b));
     setLocalBeans(next);
-    setDetail(updated);
+    // update current nav entry so detail view reflects changes
+    setNavStack((s) => s.map((entry, i) =>
+      i === s.length - 1 && entry.type === 'beans' ? { ...entry } : entry
+    ));
     await updateBeans(next);
   };
+
+  // resolve current item
+  let currentBean = null;
+  let currentFarm = null;
+  let currentProcess = null;
+  let currentTerm = null;
+  let currentCountry = null;
+  let headerTitle = status;
+
+  if (current) {
+    if (current.type === 'beans') {
+      currentBean = localBeans.find((b) => String(b.id) === String(current.id));
+      headerTitle = currentBean?.name ?? '';
+    } else if (current.type === 'farms') {
+      currentFarm = data.farms.find((f) => f.slug === current.id);
+      headerTitle = currentFarm?.name ?? '';
+    } else if (current.type === 'processes') {
+      currentProcess = data.processes.find((p) => p.slug === current.id);
+      headerTitle = currentProcess?.name ?? '';
+    } else if (current.type === 'terms') {
+      currentTerm = data.terms.find((t) => t.slug === current.id);
+      headerTitle = currentTerm?.name ?? '';
+    } else if (current.type === 'countries') {
+      currentCountry = data.countries.find((c) => c.slug === current.id);
+      headerTitle = currentCountry?.name ?? '';
+    }
+  }
+
+  // back label
+  const backLabel = (() => {
+    if (!current) return null;
+    if (!prev) return status;
+    const labels = { beans: localBeans.find((b) => String(b.id) === String(prev.id))?.name, farms: data.farms.find((f) => f.slug === prev.id)?.name, processes: data.processes.find((p) => p.slug === prev.id)?.name, terms: data.terms.find((t) => t.slug === prev.id)?.name, countries: data.countries.find((c) => c.slug === prev.id)?.name };
+    return labels[prev.type] ?? status;
+  })();
+
+  const isBean = current?.type === 'beans';
 
   return (
     <div
@@ -86,29 +134,36 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
         <div className="max-w-2xl mx-auto px-6 py-5 flex items-center justify-between">
           <button
             type="button"
-            onClick={detail ? () => setDetail(null) : onClose}
+            onClick={current ? goBack : onClose}
             className="text-[11px] tracking-widest transition-colors cursor-pointer"
             style={{ color: '#5a5248', border: '0.5px solid #3a3228', padding: '4px 12px' }}
           >
-            {detail ? '← 一覧へ戻る' : '← 閉じる'}
+            {current ? `← ${backLabel ?? status}` : '← 閉じる'}
           </button>
           <span
-            className="font-serif-jp text-sm font-light tracking-wide"
-            style={{ color: '#F8F6F2' }}
+            className="font-serif-jp text-sm font-light tracking-wide truncate mx-4 text-center"
+            style={{ color: '#F8F6F2', maxWidth: '160px' }}
           >
-            {detail ? detail.name : status}
-            {!detail && (
+            {headerTitle}
+            {!current && (
               <span className="ml-2 text-[11px]" style={{ color: '#5a5248' }}>
                 {filtered.length}件
               </span>
             )}
           </span>
-          <div style={{ width: '80px' }} />
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-[11px] tracking-widest transition-colors cursor-pointer"
+            style={{ color: '#5a5248', border: '0.5px solid #3a3228', padding: '4px 12px' }}
+          >
+            閉じる
+          </button>
         </div>
 
-        {/* プレビュー / 編集 タブ（詳細表示時のみ） */}
-        {detail && (
-          <div className="max-w-2xl mx-auto px-6 flex gap-6 pb-0" style={{ borderTop: '0.5px solid #2a2828' }}>
+        {/* プレビュー / 編集 タブ（豆詳細のみ） */}
+        {isBean && (
+          <div className="max-w-2xl mx-auto px-6 flex gap-6" style={{ borderTop: '0.5px solid #2a2828' }}>
             {['preview', 'edit'].map((t) => (
               <button
                 key={t}
@@ -129,32 +184,83 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
 
       <div
         className="max-w-2xl mx-auto px-6 pt-8 font-sans-jp"
-        style={{ paddingBottom: detail ? '64px' : '96px' }}
+        style={{ paddingBottom: isBean ? '64px' : '96px' }}
       >
-        {!detail ? (
-          <BeanListView beans={filtered} onSelectBean={openBean} />
-        ) : editTab === 'preview' ? (
+        {/* 豆一覧 */}
+        {!current && (
+          <BeanListView beans={filtered} onSelectBean={(id) => navigateTo('beans', id)} />
+        )}
+
+        {/* 豆詳細 */}
+        {isBean && currentBean && editTab === 'preview' && (
           <BeanDetailView
-            bean={detail}
-            onBack={() => setDetail(null)}
+            bean={currentBean}
+            onBack={goBack}
             onNavigate={navigateTo}
-            backLabel={status}
+            backLabel={backLabel ?? status}
           />
-        ) : (
+        )}
+        {isBean && currentBean && editTab === 'edit' && (
           <AdminBeanForm
-            bean={detail}
-            onSave={(form) => handleSave(form)}
+            bean={currentBean}
+            onSave={(form) => { handleSave(form); setEditTab('preview'); }}
             onCancel={() => setEditTab('preview')}
             onDelete={() => {}}
           />
         )}
+
+        {/* 農園詳細 */}
+        {current?.type === 'farms' && currentFarm && (
+          <FarmDetailView
+            farm={currentFarm}
+            beans={localBeans}
+            onBack={goBack}
+            onSelectBean={(id) => navigateTo('beans', id)}
+            onNavigate={navigateTo}
+            backLabel={backLabel ?? status}
+          />
+        )}
+
+        {/* 精製方法詳細 */}
+        {current?.type === 'processes' && currentProcess && (
+          <ProcessDetailView
+            process={currentProcess}
+            beans={localBeans}
+            onBack={goBack}
+            onSelectBean={(id) => navigateTo('beans', id)}
+            onNavigate={navigateTo}
+            backLabel={backLabel ?? status}
+          />
+        )}
+
+        {/* 用語詳細 */}
+        {current?.type === 'terms' && currentTerm && (
+          <TermDetailView
+            term={currentTerm}
+            beans={localBeans}
+            onBack={goBack}
+            onSelectBean={(id) => navigateTo('beans', id)}
+            backLabel={backLabel ?? status}
+          />
+        )}
+
+        {/* 産地詳細 */}
+        {current?.type === 'countries' && currentCountry && (
+          <CountryDetailView
+            country={currentCountry}
+            beans={localBeans}
+            onBack={goBack}
+            onSelectBean={(id) => navigateTo('beans', id)}
+            backLabel={backLabel ?? status}
+          />
+        )}
       </div>
 
-      {/* ステータスバー（詳細表示時のみ） */}
-      {detail && (
+      {/* ステータスバー（豆詳細のみ） */}
+      {isBean && currentBean && (
         <StatusBar
-          key={detail.id}
-          bean={detail}
+          key={currentBean.id}
+          bean={currentBean}
           onSave={handleSave}
         />
       )}
