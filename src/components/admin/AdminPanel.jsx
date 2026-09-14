@@ -4,6 +4,7 @@ import AdminBeans from './AdminBeans';
 import AdminSimpleEditor from './AdminSimpleEditor';
 import AdminSeals from './AdminSeals';
 import AdminImages from './AdminImages';
+import AdminStatusPreview from './AdminStatusPreview';
 
 const FARM_FIELDS = [
   { key: 'slug', label: 'スラッグ (例: esmeralda)' },
@@ -47,10 +48,18 @@ const TERM_FIELDS = [
 const TABS = ['ダッシュボード', '豆管理', 'シール管理', '画像管理', '農園管理', '産地管理', '精製方法管理', '用語集管理'];
 
 export default function AdminPanel({ data, updateBeans, updateFarms, updateCountries, updateProcesses, updateTerms, updateSeals, onLogout }) {
-  const [tab, setTab] = useState('豆管理');
+  const [tab, setTab] = useState('ダッシュボード');
+  const [previewStatus, setPreviewStatus] = useState(null);
 
   return (
     <div style={{ backgroundColor: '#f0ebe4', minHeight: '100vh' }}>
+      {previewStatus && (
+        <AdminStatusPreview
+          status={previewStatus}
+          data={data}
+          onClose={() => setPreviewStatus(null)}
+        />
+      )}
       <header className="bg-stone-800 text-white px-6 py-3 flex items-center justify-between font-sans-jp">
         <span className="font-serif-jp text-sm tracking-wide">Bean Profile 管理画面</span>
         <button type="button" onClick={onLogout} className="text-[11px] text-stone-300 hover:text-white tracking-widest cursor-pointer">
@@ -74,7 +83,7 @@ export default function AdminPanel({ data, updateBeans, updateFarms, updateCount
         </div>
       </nav>
       <main className="max-w-3xl mx-auto px-4 py-8 font-sans-jp">
-        {tab === 'ダッシュボード' && <AdminDashboard data={data} />}
+        {tab === 'ダッシュボード' && <AdminDashboard data={data} onSelectStatus={setPreviewStatus} />}
         {tab === '豆管理' && <AdminBeans beans={data.beans} updateBeans={updateBeans} />}
         {tab === 'シール管理' && <AdminSeals beans={data.beans} updateBeans={updateBeans} seals={data.seals ?? []} updateSeals={updateSeals} />}
         {tab === '画像管理' && <AdminImages beans={data.beans} updateBeans={updateBeans} onGoToBeans={() => setTab('豆管理')} />}
