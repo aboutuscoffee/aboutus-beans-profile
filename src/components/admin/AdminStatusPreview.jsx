@@ -7,8 +7,61 @@ import TermDetailView from '../public/TermDetailView';
 import CountryDetailView from '../public/CountryDetailView';
 import AdminBeanForm from './AdminBeanForm';
 import { STATUS_ORDER } from '../../constants';
+import { uploadBeanImage } from '../../lib/db';
 
 const STATUSES = Object.keys(STATUS_ORDER);
+
+function ImageStrip({ bean, onUpdateBean }) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleUpload = async (file) => {
+    if (!file) return;
+    setUploading(true);
+    setError('');
+    try {
+      const url = await uploadBeanImage(bean.id, file);
+      await onUpdateBean({ ...bean, image_urls: [...(bean.image_urls ?? []), url] });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDelete = async (index) => {
+    await onUpdateBean({ ...bean, image_urls: (bean.image_urls ?? []).filter((_, i) => i !== index) });
+  };
+
+  return (
+    <div style={{ borderTop: '0.5px solid #D8D2C8', backgroundColor: '#f0ebe4', paddingBottom: '80px' }}>
+      <div className="max-w-2xl mx-auto px-6 py-4">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[8px] tracking-widest" style={{ color: '#9a9080' }}>画像</span>
+          <span className="text-[7px] px-1.5 py-px" style={{ color: '#7a6a5a', border: '0.5px solid #C0B8A8' }}>管理用</span>
+        </div>
+        <div className="flex gap-2 flex-wrap items-start">
+          {(bean.image_urls ?? []).map((url, i) => (
+            <div key={url} className="relative flex-shrink-0" style={{ width: '56px', height: '56px', border: '0.5px solid #C0BAB2', overflow: 'hidden' }}>
+              <img src={url} alt="" className="w-full h-full object-cover" />
+              <button
+                type="button"
+                onClick={() => handleDelete(i)}
+                className="absolute top-px right-px flex items-center justify-center cursor-pointer"
+                style={{ width: '13px', height: '13px', background: 'rgba(255,255,255,.9)', color: '#c05a5a', fontSize: '8px', border: 'none' }}
+              >✕</button>
+            </div>
+          ))}
+          <label className="flex items-center justify-center flex-shrink-0 cursor-pointer" style={{ width: '56px', height: '56px', border: '0.5px dashed #C0BAB2' }}>
+            <span className="text-[8px]" style={{ color: '#9a9080' }}>{uploading ? '…' : '＋ 追加'}</span>
+            <input type="file" accept=".jpg,.jpeg,.png" onChange={(e) => handleUpload(e.target.files?.[0])} disabled={uploading} className="hidden" />
+          </label>
+        </div>
+        {error && <p className="text-[10px] mt-2" style={{ color: '#c05a5a' }}>{error}</p>}
+      </div>
+    </div>
+  );
+}
 
 function StatusBar({ bean, onSave, onBackToList }) {
   const [status, setStatus] = useState(bean.status);
@@ -194,7 +247,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
 
       <div
         className="max-w-2xl mx-auto px-6 pt-8 font-sans-jp"
-        style={{ paddingBottom: isBean ? '64px' : '96px' }}
+        style={{ paddingBottom: isBean && editTab === 'preview' ? '0' : (isBean ? '64px' : '96px') }}
       >
         {/* 豆一覧 */}
         {!current && (
@@ -265,6 +318,11 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
           />
         )}
       </div>
+
+      {/* 画像ストリップ（豆詳細プレビュータブのみ） */}
+      {isBean && currentBean && editTab === 'preview' && (
+        <ImageStrip bean={currentBean} onUpdateBean={handleSave} />
+      )}
 
       {/* ステータスバー（豆詳細のみ） */}
       {isBean && currentBean && (
