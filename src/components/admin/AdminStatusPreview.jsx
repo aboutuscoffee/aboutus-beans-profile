@@ -60,7 +60,7 @@ function MediaStrip({ bean, onUpdateBean }) {
 
   return (
     <div style={{ borderTop: '0.5px solid #E0DCD6', backgroundColor: '#FAFAF8', paddingBottom: '80px' }}>
-      <div className="max-w-2xl mx-auto px-6 py-5 space-y-5">
+      <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-5 space-y-5">
         {/* 管理用バッジ */}
         <div className="flex items-center gap-2">
           <span className="text-[7px] px-1.5 py-px tracking-widest" style={{ color: '#7a6a5a', border: '0.5px solid #D0C8BE' }}>管理用</span>
@@ -145,7 +145,7 @@ function StatusBar({ bean, onSave, onBackToList }) {
       className="fixed bottom-0 left-0 right-0 z-10 border-t"
       style={{ backgroundColor: '#1A181A', borderColor: '#2a2828' }}
     >
-      <div className="max-w-2xl mx-auto px-6 py-3 flex items-center gap-4">
+      <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-3 flex items-center gap-4">
         <span className="text-[10px] tracking-widest" style={{ color: '#5a5248' }}>STATUS</span>
         <select
           value={status}
@@ -257,7 +257,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
     >
       {/* ヘッダー */}
       <header style={{ backgroundColor: '#1A181A' }}>
-        <div className="max-w-2xl mx-auto px-6 py-5 flex items-center justify-between">
+        <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-5 flex items-center justify-between">
           <button
             type="button"
             onClick={current ? goBack : onClose}
@@ -289,7 +289,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
 
         {/* プレビュー / 編集 タブ（豆詳細のみ） */}
         {isBean && (
-          <div className="max-w-2xl mx-auto px-6 flex gap-6" style={{ borderTop: '0.5px solid #2a2828' }}>
+          <div className="max-w-2xl md:max-w-4xl mx-auto px-6 flex gap-6" style={{ borderTop: '0.5px solid #2a2828' }}>
             {['preview', 'edit'].map((t) => (
               <button
                 key={t}
@@ -309,7 +309,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
       </header>
 
       <div
-        className="max-w-2xl mx-auto px-6 pt-8 font-sans-jp"
+        className="max-w-2xl md:max-w-4xl mx-auto px-6 pt-8 font-sans-jp"
         style={{ paddingBottom: isBean && editTab === 'preview' ? '0' : (isBean ? '64px' : '96px') }}
       >
         {/* 豆一覧 */}

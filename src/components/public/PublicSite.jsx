@@ -158,7 +158,7 @@ export default function PublicSite({ data, onOpenAdmin }) {
     <div style={{ backgroundColor: '#FAFAF8', color: '#1A181A', minHeight: '100vh' }} className="font-sans-jp">
       {/* フルワイドダークヘッダー */}
       <header style={{ backgroundColor: '#1A181A' }}>
-        <div className="max-w-2xl mx-auto px-6 py-7 relative">
+        <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-7 relative">
           <div className="flex justify-end mb-5">
             <button
               onClick={onOpenAdmin}
@@ -181,7 +181,7 @@ export default function PublicSite({ data, onOpenAdmin }) {
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-6">
+      <div className="max-w-2xl md:max-w-4xl mx-auto px-6">
         <nav
           className="flex justify-center gap-6 pb-3 mb-10 text-[11px] tracking-[0.2em] overflow-x-auto mt-0"
           style={{ borderBottom: '0.5px solid #E0DCD6', paddingTop: '16px' }}
