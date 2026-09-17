@@ -36,9 +36,9 @@ export async function subscribeToPush() {
   return subscription;
 }
 
-export async function sendTestNotification() {
+export async function sendPushNotification(title, body = '') {
   const { data, error } = await supabase.functions.invoke('send-test-push', {
-    body: { title: 'テスト通知', body: 'プッシュ通知のテストです' },
+    body: { title, body },
   });
   if (error) throw new Error(error.message);
   return data;

@@ -8,6 +8,7 @@ import CountryDetailView from '../public/CountryDetailView';
 import AdminBeanForm from './AdminBeanForm';
 import { STATUS_ORDER } from '../../constants';
 import { uploadBeanImage, uploadSeal, parseSealUrls, serializeSealUrls } from '../../lib/db';
+import { sendPushNotification } from '../../lib/push';
 
 const STATUSES = Object.keys(STATUS_ORDER);
 
@@ -134,6 +135,9 @@ function StatusBar({ bean, onSave, onBackToList }) {
 
   const handleSave = async () => {
     setSaving(true);
+    if (status === 'リリース中' && ['編集中', '確認中'].includes(bean.status)) {
+      sendPushNotification('New Profile', `${bean.name} が更新されました`).catch(() => {});
+    }
     await onSave({ ...bean, status });
     setSaving(false);
     setSaved(true);

@@ -3,6 +3,7 @@ import { STATUS_ORDER, STATUS_COLORS } from '../../constants';
 import { stripWikiLinks } from '../../utils';
 import NewBadge from '../common/NewBadge';
 import AdminBeanForm from './AdminBeanForm';
+import { sendPushNotification } from '../../lib/push';
 
 export default function AdminBeans({ beans, updateBeans, initialEditBean }) {
   const [view, setView] = useState(initialEditBean ? 'edit' : 'list');
@@ -57,7 +58,13 @@ export default function AdminBeans({ beans, updateBeans, initialEditBean }) {
   };
 
   const toggleNew = (id) => updateBeans(beans.map((b) => (String(b.id) === String(id) ? { ...b, is_new: !b.is_new } : b)));
-  const changeStatus = (id, status) => updateBeans(beans.map((b) => (String(b.id) === String(id) ? { ...b, status } : b)));
+  const changeStatus = (id, status) => {
+    const bean = beans.find((b) => String(b.id) === String(id));
+    if (status === 'リリース中' && bean && ['編集中', '確認中'].includes(bean.status)) {
+      sendPushNotification('New Profile', `${bean.name} が更新されました`).catch(() => {});
+    }
+    updateBeans(beans.map((b) => (String(b.id) === String(id) ? { ...b, status } : b)));
+  };
 
   if (view === 'new' || view === 'edit') {
     return (

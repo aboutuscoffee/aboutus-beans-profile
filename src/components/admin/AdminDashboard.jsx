@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { STATUS_ORDER, STATUS_COLORS } from '../../constants';
-import { subscribeToPush, sendTestNotification } from '../../lib/push';
+import { subscribeToPush, sendPushNotification } from '../../lib/push';
 
 export default function AdminDashboard({ data, onSelectStatus }) {
   const byStatus = Object.keys(STATUS_ORDER).map((s) => ({
@@ -10,6 +10,8 @@ export default function AdminDashboard({ data, onSelectStatus }) {
 
   const [pushStatus, setPushStatus] = useState('');
   const [pushError, setPushError] = useState('');
+  const [manualMsg, setManualMsg] = useState('');
+  const [sending, setSending] = useState(false);
 
   async function handleSubscribe() {
     setPushError('');
@@ -23,15 +25,19 @@ export default function AdminDashboard({ data, onSelectStatus }) {
     }
   }
 
-  async function handleTestSend() {
+  async function handleManualSend() {
+    if (!manualMsg.trim()) return;
+    setSending(true);
     setPushError('');
-    setPushStatus('送信中…');
+    setPushStatus('');
     try {
-      const result = await sendTestNotification();
+      const result = await sendPushNotification('Bean Profile', manualMsg.trim());
       setPushStatus(`送信しました（${result?.sent ?? 0}件）`);
+      setManualMsg('');
     } catch (e) {
-      setPushStatus('');
       setPushError(e.message);
+    } finally {
+      setSending(false);
     }
   }
 
@@ -66,24 +72,38 @@ export default function AdminDashboard({ data, onSelectStatus }) {
           </button>
         ))}
       </div>
-      <div className="mt-10 border-t border-stone-200 pt-6">
-        <h3 className="text-[11px] tracking-widest text-stone-400 mb-3">プッシュ通知（テスト）</h3>
-        <div className="flex gap-3">
+      <div className="mt-10 border-t border-stone-200 pt-6 space-y-4">
+        <h3 className="text-[11px] tracking-widest text-stone-400">通知</h3>
+        <div>
+          <p className="text-[11px] text-stone-400 mb-2">このデバイスで通知を受け取る</p>
           <button
             onClick={handleSubscribe}
-            className="border border-stone-300 px-4 py-2 text-sm hover:bg-stone-50"
+            className="border border-stone-300 px-4 py-2 text-xs tracking-widest hover:bg-stone-50 cursor-pointer"
           >
             通知を有効化
           </button>
-          <button
-            onClick={handleTestSend}
-            className="border border-stone-300 px-4 py-2 text-sm hover:bg-stone-50"
-          >
-            テスト通知を送信
-          </button>
+          {pushStatus && <p className="text-xs mt-2 text-stone-500">{pushStatus}</p>}
+          {pushError && <p className="text-xs mt-2 text-red-500">{pushError}</p>}
         </div>
-        {pushStatus && <p className="text-xs mt-2 text-stone-500">{pushStatus}</p>}
-        {pushError && <p className="text-xs mt-2 text-red-500">{pushError}</p>}
+        <div className="border-t border-stone-100 pt-4">
+          <p className="text-[11px] text-stone-400 mb-2">手動送信</p>
+          <div className="flex gap-2">
+            <input
+              value={manualMsg}
+              onChange={(e) => setManualMsg(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleManualSend()}
+              placeholder="通知内容を入力"
+              className="flex-1 border-b border-stone-300 focus:border-stone-600 outline-none py-1.5 text-sm bg-transparent"
+            />
+            <button
+              onClick={handleManualSend}
+              disabled={!manualMsg.trim() || sending}
+              className="border border-stone-300 px-4 py-1.5 text-xs tracking-widest hover:bg-stone-50 cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              {sending ? '送信中…' : '送信'}
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
