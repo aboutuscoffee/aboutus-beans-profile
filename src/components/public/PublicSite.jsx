@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { subscribeToPush } from '../../lib/push';
 import BeanListView from './BeanListView';
 import BeanDetailView from './BeanDetailView';
 import ListSimpleView from './ListSimpleView';
@@ -24,6 +25,7 @@ const TABS = [
 
 export default function PublicSite({ data, onOpenAdmin }) {
   const [tab, setTab] = useState('beans');
+  const [notifState, setNotifState] = useState('idle'); // idle | granted | denied
   const [detail, setDetail] = useState(null);
   const [navHistory, setNavHistory] = useState([]);
   const [beanPage, setBeanPage] = useState(1);
@@ -159,7 +161,23 @@ export default function PublicSite({ data, onOpenAdmin }) {
       {/* フルワイドダークヘッダー */}
       <header style={{ backgroundColor: '#1A181A' }}>
         <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-7 relative">
-          <div className="flex justify-end mb-5">
+          <div className="flex justify-between mb-5">
+            <button
+              type="button"
+              title={notifState === 'granted' ? '通知ON' : '通知を有効化'}
+              onClick={async () => {
+                try {
+                  await subscribeToPush();
+                  setNotifState('granted');
+                } catch {
+                  setNotifState('denied');
+                }
+              }}
+              className="text-base leading-none cursor-pointer transition-opacity"
+              style={{ opacity: notifState === 'granted' ? 1 : 0.4, background: 'none', border: 'none', padding: '4px' }}
+            >
+              🔔
+            </button>
             <button
               onClick={onOpenAdmin}
               type="button"
