@@ -86,13 +86,29 @@ export async function uploadBeanImage(beanId, file) {
   return data.publicUrl;
 }
 
-export async function uploadCardImage(beanId, file) {
+export async function uploadCardImage(beanId, file, index = 0) {
   const ext = file.name.split('.').pop().toLowerCase();
-  const path = `${beanId}_card_${Date.now()}.${ext}`;
+  const path = `${beanId}_card${index + 1}_${Date.now()}.${ext}`;
   const { error: upErr } = await supabase.storage.from('bean-images').upload(path, file, { upsert: true });
   if (upErr) throw new Error(upErr.message);
   const { data } = supabase.storage.from('bean-images').getPublicUrl(path);
   return data.publicUrl;
+}
+
+export function parseCardUrls(cardUrl) {
+  if (!cardUrl) return ['', ''];
+  try {
+    const arr = JSON.parse(cardUrl);
+    return [arr[0] ?? '', arr[1] ?? ''];
+  } catch {
+    return [cardUrl, ''];
+  }
+}
+
+export function serializeCardUrls(url0, url1) {
+  if (!url0 && !url1) return '';
+  if (url0 && !url1) return url0;
+  return JSON.stringify([url0, url1].filter(Boolean));
 }
 
 export async function deleteBean(id) {

@@ -7,7 +7,7 @@ import TermDetailView from '../public/TermDetailView';
 import CountryDetailView from '../public/CountryDetailView';
 import AdminBeanForm from './AdminBeanForm';
 import { STATUS_ORDER } from '../../constants';
-import { uploadBeanImage, uploadCardImage, uploadSeal, parseSealUrls, serializeSealUrls } from '../../lib/db';
+import { uploadBeanImage, uploadCardImage, uploadSeal, parseSealUrls, serializeSealUrls, parseCardUrls, serializeCardUrls } from '../../lib/db';
 import { sendPushNotification } from '../../lib/push';
 
 const STATUSES = Object.keys(STATUS_ORDER);
@@ -52,26 +52,42 @@ function OwnerSlot({ label, fileUrl, isImage, accept, uploading, onUpload, onDel
 }
 
 function MediaStrip({ bean, onUpdateBean }) {
-  const [cardUploading, setCardUploading] = useState(false);
+  const [cardUploading, setCardUploading] = useState([false, false]);
   const [imgUploading, setImgUploading] = useState(false);
   const [sealUploading, setSealUploading] = useState([false, false]);
   const [error, setError] = useState('');
-  const [cardDragOver, setCardDragOver] = useState(false);
+  const [cardDragOver, setCardDragOver] = useState([false, false]);
 
   const sealUrls = parseSealUrls(bean.seal_url);
+  const cardUrls = parseCardUrls(bean.card_image_url);
 
-  const handleCardUpload = async (file) => {
+  const handleCardUpload = async (file, slotIndex) => {
     if (!file) return;
-    setCardUploading(true);
+    setCardUploading((s) => s.map((v, i) => i === slotIndex ? true : v));
     setError('');
     try {
-      const url = await uploadCardImage(bean.id, file);
-      await onUpdateBean({ ...bean, card_image_url: url });
+      const url = await uploadCardImage(bean.id, file, slotIndex);
+      const next = [...cardUrls];
+      next[slotIndex] = url;
+      await onUpdateBean({ ...bean, card_image_url: serializeCardUrls(next[0], next[1]) });
     } catch (err) {
       setError(err.message);
     } finally {
-      setCardUploading(false);
+      setCardUploading((s) => s.map((v, i) => i === slotIndex ? false : v));
     }
+  };
+
+  const handleCardDelete = async (slotIndex) => {
+    const next = [...cardUrls];
+    next[slotIndex] = '';
+    await onUpdateBean({ ...bean, card_image_url: serializeCardUrls(next[0], next[1]) });
+  };
+
+  const handleCardDrop = async (url, slotIndex) => {
+    setCardDragOver([false, false]);
+    const next = [...cardUrls];
+    next[slotIndex] = url;
+    await onUpdateBean({ ...bean, card_image_url: serializeCardUrls(next[0], next[1]) });
   };
 
   const handleImageUpload = async (file) => {
@@ -121,42 +137,40 @@ function MediaStrip({ bean, onUpdateBean }) {
           <span className="text-[7px] px-1.5 py-px tracking-widest" style={{ color: '#7a6a5a', border: '0.5px solid #D0C8BE' }}>管理用</span>
         </div>
 
-        {/* 専用2スロット（カード写真 + シール×2） */}
-        <div>
-          <span className="block text-[8px] tracking-widest mb-3" style={{ color: '#9a9080' }}>専用データ（オーナー格納）</span>
-          <div className="flex gap-5 flex-wrap">
+        {/* 専用スロット（カード写真×2 + シール×2） */}
+        <div className="flex gap-5 flex-wrap">
+          {[0, 1].map((i) => (
             <OwnerSlot
-              label="カード写真"
-              fileUrl={bean.card_image_url}
+              key={`card-${i}`}
+              label={`カード写真 #${i + 1}`}
+              fileUrl={cardUrls[i]}
               isImage={true}
               accept=".jpg,.jpeg,.png,.webp"
-              uploading={cardUploading}
-              onUpload={handleCardUpload}
-              onDelete={() => onUpdateBean({ ...bean, card_image_url: '' })}
-              onDropUrl={(url) => { setCardDragOver(false); onUpdateBean({ ...bean, card_image_url: url }); }}
-              isDragOver={cardDragOver}
-              onDragOver={(e) => { e.preventDefault(); setCardDragOver(true); }}
-              onDragLeave={() => setCardDragOver(false)}
+              uploading={cardUploading[i]}
+              onUpload={(f) => handleCardUpload(f, i)}
+              onDelete={() => handleCardDelete(i)}
+              onDropUrl={(url) => handleCardDrop(url, i)}
+              isDragOver={cardDragOver[i]}
+              onDragOver={(e) => { e.preventDefault(); setCardDragOver((s) => s.map((v, j) => j === i)); }}
+              onDragLeave={() => setCardDragOver([false, false])}
             />
+          ))}
+          {[0, 1].map((i) => (
             <OwnerSlot
-              label="シール #1"
-              fileUrl={sealUrls[0]}
+              key={`seal-${i}`}
+              label={`シール #${i + 1}`}
+              fileUrl={sealUrls[i]}
               isImage={false}
               accept=".pdf,.png,.jpg,.jpeg,.ai"
-              uploading={sealUploading[0]}
-              onUpload={(f) => handleSealUpload(f, 0)}
-              onDelete={() => handleSealDelete(0)}
+              uploading={sealUploading[i]}
+              onUpload={(f) => handleSealUpload(f, i)}
+              onDelete={() => handleSealDelete(i)}
+              onDropUrl={() => {}}
+              isDragOver={false}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={() => {}}
             />
-            <OwnerSlot
-              label="シール #2"
-              fileUrl={sealUrls[1]}
-              isImage={false}
-              accept=".pdf,.png,.jpg,.jpeg,.ai"
-              uploading={sealUploading[1]}
-              onUpload={(f) => handleSealUpload(f, 1)}
-              onDelete={() => handleSealDelete(1)}
-            />
-          </div>
+          ))}
         </div>
 
         {/* その他の画像（自由追加） */}

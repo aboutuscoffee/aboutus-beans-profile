@@ -1,25 +1,27 @@
 import { useState } from 'react';
 import { STATUS_ORDER, STATUS_COLORS } from '../../constants';
 import { subscribeToPush, sendPushNotification } from '../../lib/push';
-import { uploadCardImage, uploadSeal, parseSealUrls, serializeSealUrls, upsertBean } from '../../lib/db';
+import { uploadCardImage, uploadSeal, parseSealUrls, serializeSealUrls, parseCardUrls, serializeCardUrls, upsertBean } from '../../lib/db';
 
 function MissingAssetPanel({ bean, type, onClose, onSaved }) {
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleFile = async (file) => {
+  const handleFile = async (file, slotIndex = 0) => {
     if (!file) return;
     setUploading(true);
     setError('');
     try {
       let updated = { ...bean };
       if (type === 'card') {
-        const url = await uploadCardImage(bean.id, file);
-        updated.card_image_url = url;
+        const cardUrls = parseCardUrls(bean.card_image_url);
+        const url = await uploadCardImage(bean.id, file, slotIndex);
+        cardUrls[slotIndex] = url;
+        updated.card_image_url = serializeCardUrls(cardUrls[0], cardUrls[1]);
       } else {
         const sealUrls = parseSealUrls(bean.seal_url);
-        const url = await uploadSeal(bean.id, file, 0);
-        sealUrls[0] = url;
+        const url = await uploadSeal(bean.id, file, slotIndex);
+        sealUrls[slotIndex] = url;
         updated.seal_url = serializeSealUrls(sealUrls[0], sealUrls[1]);
       }
       await upsertBean(updated);
@@ -32,6 +34,11 @@ function MissingAssetPanel({ bean, type, onClose, onSaved }) {
     }
   };
 
+  const slots = type === 'card'
+    ? parseCardUrls(bean.card_image_url)
+    : parseSealUrls(bean.seal_url);
+  const emptySlots = [0, 1].filter((i) => !slots[i]);
+
   return (
     <div className="mt-2 p-3" style={{ background: '#F4F0EB', border: '0.5px solid #D0C8BE' }}>
       <div className="flex items-center justify-between mb-2">
@@ -40,18 +47,22 @@ function MissingAssetPanel({ bean, type, onClose, onSaved }) {
         </span>
         <button type="button" onClick={onClose} className="text-[10px] cursor-pointer" style={{ color: '#9a9080' }}>閉じる</button>
       </div>
-      <label className="cursor-pointer inline-block">
-        <span className="text-[11px] px-4 py-1.5" style={{ border: '0.5px solid #A0978E', color: '#5a5248', display: 'inline-block' }}>
-          {uploading ? 'アップロード中...' : 'ファイルを選択'}
-        </span>
-        <input
-          type="file"
-          accept={type === 'card' ? '.jpg,.jpeg,.png,.webp' : '.pdf,.png,.jpg,.jpeg,.ai'}
-          onChange={(e) => handleFile(e.target.files?.[0])}
-          disabled={uploading}
-          className="hidden"
-        />
-      </label>
+      <div className="flex gap-3 flex-wrap">
+        {emptySlots.map((i) => (
+          <label key={i} className="cursor-pointer inline-block">
+            <span className="text-[11px] px-4 py-1.5" style={{ border: '0.5px solid #A0978E', color: '#5a5248', display: 'inline-block' }}>
+              {uploading ? 'アップロード中...' : `#${i + 1} ファイルを選択`}
+            </span>
+            <input
+              type="file"
+              accept={type === 'card' ? '.jpg,.jpeg,.png,.webp' : '.pdf,.png,.jpg,.jpeg,.ai'}
+              onChange={(e) => handleFile(e.target.files?.[0], i)}
+              disabled={uploading}
+              className="hidden"
+            />
+          </label>
+        ))}
+      </div>
       {error && <p className="text-[10px] mt-1" style={{ color: '#c05a5a' }}>{error}</p>}
     </div>
   );
@@ -59,8 +70,10 @@ function MissingAssetPanel({ bean, type, onClose, onSaved }) {
 
 function MissingAssetRow({ bean, onSaved }) {
   const [openPanel, setOpenPanel] = useState(null);
-  const missingCard = !bean.card_image_url;
-  const missingSeal = !bean.seal_url;
+  const cardUrls = parseCardUrls(bean.card_image_url);
+  const sealUrls = parseSealUrls(bean.seal_url);
+  const missingCard = cardUrls.some((u) => !u);
+  const missingSeal = sealUrls.some((u) => !u);
 
   const toggle = (type) => setOpenPanel((p) => p === type ? null : type);
 
@@ -117,7 +130,12 @@ export default function AdminDashboard({ data, onSelectStatus, onUpdateBeans }) 
     count: localBeans.filter((b) => b.status === s).length,
   }));
 
-  const missingAssets = localBeans.filter((b) => b.status !== '終売' && (!b.card_image_url || !b.seal_url));
+  const missingAssets = localBeans.filter((b) => {
+    if (b.status === '終売') return false;
+    const cardUrls = parseCardUrls(b.card_image_url);
+    const sealUrls = parseSealUrls(b.seal_url);
+    return cardUrls.some((u) => !u) || sealUrls.some((u) => !u);
+  });
 
   const handleBeanSaved = (updated) => {
     const next = localBeans.map((b) => String(b.id) === String(updated.id) ? updated : b);
