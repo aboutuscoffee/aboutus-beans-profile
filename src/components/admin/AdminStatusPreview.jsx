@@ -12,13 +12,14 @@ import { sendPushNotification } from '../../lib/push';
 
 const STATUSES = Object.keys(STATUS_ORDER);
 
-function OwnerSlot({ label, fileUrl, isImage, accept, uploading, onUpload, onDelete }) {
+function OwnerSlot({ label, fileUrl, isImage, accept, uploading, onUpload, onDelete, onDropUrl, isDragOver, onDragOver, onDragLeave }) {
   const preview = isImage && fileUrl;
   return (
     <div style={{ minWidth: '100px' }}>
       <span className="block text-[8px] tracking-widest mb-2" style={{ color: '#9a9080' }}>{label}</span>
       {fileUrl ? (
-        <div className="relative group" style={{ width: '80px', height: '80px', border: '0.5px solid #D0C8BE', overflow: 'hidden', background: '#F0ECE8' }}>
+        <div className="relative group" style={{ width: '80px', height: '80px', border: isDragOver ? '1.5px solid #8a7a6a' : '0.5px solid #D0C8BE', overflow: 'hidden', background: '#F0ECE8', transition: 'border-color 0.15s' }}
+          onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={(e) => { e.preventDefault(); const url = e.dataTransfer.getData('text/plain'); if (url) onDropUrl(url); }}>
           {preview
             ? <img src={fileUrl} alt="" className="w-full h-full object-cover" />
             : <div className="w-full h-full flex items-center justify-center text-[9px]" style={{ color: '#7a6a5a' }}>ファイルあり</div>
@@ -39,8 +40,9 @@ function OwnerSlot({ label, fileUrl, isImage, accept, uploading, onUpload, onDel
         </div>
       ) : (
         <label className="flex flex-col items-center justify-center cursor-pointer"
-          style={{ width: '80px', height: '80px', border: '0.5px dashed #C0BAB2', background: '#F8F6F2' }}>
-          <span className="text-[9px] mb-0.5" style={{ color: '#c05a5a' }}>未</span>
+          style={{ width: '80px', height: '80px', border: isDragOver ? '1.5px solid #8a7a6a' : '0.5px dashed #C0BAB2', background: isDragOver ? '#EDE8E2' : '#F8F6F2', transition: 'all 0.15s' }}
+          onDragOver={onDragOver} onDragLeave={onDragLeave} onDrop={(e) => { e.preventDefault(); const url = e.dataTransfer.getData('text/plain'); if (url) onDropUrl(url); }}>
+          <span className="text-[9px] mb-0.5" style={{ color: isDragOver ? '#8a7a6a' : '#c05a5a' }}>{isDragOver ? 'ここへ' : '未'}</span>
           <span className="text-[8px]" style={{ color: '#9a9080' }}>{uploading ? '…' : '＋ 追加'}</span>
           <input type="file" accept={accept} onChange={(e) => onUpload(e.target.files?.[0])} disabled={uploading} className="hidden" />
         </label>
@@ -54,6 +56,7 @@ function MediaStrip({ bean, onUpdateBean }) {
   const [imgUploading, setImgUploading] = useState(false);
   const [sealUploading, setSealUploading] = useState([false, false]);
   const [error, setError] = useState('');
+  const [cardDragOver, setCardDragOver] = useState(false);
 
   const sealUrls = parseSealUrls(bean.seal_url);
 
@@ -130,6 +133,10 @@ function MediaStrip({ bean, onUpdateBean }) {
               uploading={cardUploading}
               onUpload={handleCardUpload}
               onDelete={() => onUpdateBean({ ...bean, card_image_url: '' })}
+              onDropUrl={(url) => { setCardDragOver(false); onUpdateBean({ ...bean, card_image_url: url }); }}
+              isDragOver={cardDragOver}
+              onDragOver={(e) => { e.preventDefault(); setCardDragOver(true); }}
+              onDragLeave={() => setCardDragOver(false)}
             />
             <OwnerSlot
               label="シール #1"
@@ -157,8 +164,10 @@ function MediaStrip({ bean, onUpdateBean }) {
           <span className="block text-[8px] tracking-widest mb-2" style={{ color: '#9a9080' }}>その他の画像</span>
           <div className="flex gap-2 flex-wrap items-start">
             {(bean.image_urls ?? []).map((url, i) => (
-              <div key={url} className="relative flex-shrink-0" style={{ width: '56px', height: '56px', border: '0.5px solid #D0C8BE', overflow: 'hidden' }}>
-                <img src={url} alt="" className="w-full h-full object-cover" />
+              <div key={url} className="relative flex-shrink-0" draggable
+                onDragStart={(e) => e.dataTransfer.setData('text/plain', url)}
+                style={{ width: '56px', height: '56px', border: '0.5px solid #D0C8BE', overflow: 'hidden', cursor: 'grab' }}>
+                <img src={url} alt="" className="w-full h-full object-cover pointer-events-none" />
                 <button
                   type="button"
                   onClick={() => handleImageDelete(i)}
