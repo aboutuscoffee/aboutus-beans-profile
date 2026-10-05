@@ -117,7 +117,7 @@ export default function AdminDashboard({ data, onSelectStatus, onUpdateBeans }) 
     count: localBeans.filter((b) => b.status === s).length,
   }));
 
-  const missingAssets = localBeans.filter((b) => !b.card_image_url || !b.seal_url);
+  const missingAssets = localBeans.filter((b) => b.status !== '終売' && (!b.card_image_url || !b.seal_url));
 
   const handleBeanSaved = (updated) => {
     const next = localBeans.map((b) => String(b.id) === String(updated.id) ? updated : b);
