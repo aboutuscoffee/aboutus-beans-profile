@@ -15,6 +15,7 @@ const STATUS_DOT = {
 export default function BeanListView({ beans, onSelectBean, savedPage, onPageChange, savedSearch, onSearchChange }) {
   const [localSearch, setLocalSearch] = useState(savedSearch ?? '');
   const [localPage, setLocalPage] = useState(savedPage ?? 1);
+  const [discontinuedOpen, setDiscontinuedOpen] = useState(false);
 
   const search = savedSearch !== undefined ? savedSearch : localSearch;
   const page = savedPage !== undefined ? savedPage : localPage;
@@ -27,7 +28,7 @@ export default function BeanListView({ beans, onSelectBean, savedPage, onPageCha
     onSearchChange ? onSearchChange(v) : setLocalSearch(v);
   };
 
-  const filtered = useMemo(() => {
+  const { active, discontinued } = useMemo(() => {
     const q = search.trim().toLowerCase();
     const list = q
       ? beans.filter(
@@ -37,16 +38,20 @@ export default function BeanListView({ beans, onSelectBean, savedPage, onPageCha
             stripWikiLinks(b.variety ?? '').toLowerCase().includes(q)
         )
       : beans;
-    return [...list].sort((a, b) => {
+    const sorted = [...list].sort((a, b) => {
       const sa = STATUS_ORDER[a.status] ?? 99;
       const sb = STATUS_ORDER[b.status] ?? 99;
       return sa !== sb ? sa - sb : (b.price || 0) - (a.price || 0);
     });
+    return {
+      active: sorted.filter((b) => b.status !== '終売'),
+      discontinued: sorted.filter((b) => b.status === '終売'),
+    };
   }, [beans, search]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(active.length / PAGE_SIZE));
   const currentPage = Math.min(page, totalPages);
-  const pageItems = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+  const pageItems = active.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   const handleSearch = (v) => { setSearch(v); setPage(1); };
 
@@ -93,20 +98,40 @@ export default function BeanListView({ beans, onSelectBean, savedPage, onPageCha
           </button>
         </div>
       )}
+
+      {/* 終売 */}
+      {discontinued.length > 0 && (
+        <div className="mt-14">
+          <button
+            type="button"
+            onClick={() => setDiscontinuedOpen((v) => !v)}
+            className="flex items-center justify-end w-full gap-2 cursor-pointer"
+            style={{ color: '#C0BAB0' }}
+          >
+            <span className="text-[9px] tracking-widest">{discontinuedOpen ? '▲' : '▼'}</span>
+            <span className="text-[9px] tracking-widest">終売 {discontinued.length}</span>
+          </button>
+          {discontinuedOpen && (
+            <div className="mt-5 grid grid-cols-3 gap-x-4 gap-y-8" style={{ opacity: 0.45 }}>
+              {discontinued.map((bean) => (
+                <BeanCard key={bean.id} bean={bean} onSelect={() => onSelectBean(bean.id)} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 function BeanCard({ bean, onSelect }) {
   const dotColor = STATUS_DOT[bean.status] ?? '#C2BCA9';
-  const faded = bean.status === '終売';
   const thumb = bean.image_urls?.find(Boolean);
 
   return (
     <div
       onClick={onSelect}
       className="cursor-pointer group"
-      style={{ opacity: faded ? 0.5 : 1 }}
     >
       {/* 画像 */}
       <div
