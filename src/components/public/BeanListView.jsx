@@ -38,11 +38,7 @@ export default function BeanListView({ beans, onSelectBean, savedPage, onPageCha
             stripWikiLinks(b.variety ?? '').toLowerCase().includes(q)
         )
       : beans;
-    const sorted = [...list].sort((a, b) => {
-      const sa = STATUS_ORDER[a.status] ?? 99;
-      const sb = STATUS_ORDER[b.status] ?? 99;
-      return sa !== sb ? sa - sb : (b.price || 0) - (a.price || 0);
-    });
+    const sorted = [...list].sort((a, b) => (b.price || 0) - (a.price || 0));
     return {
       active: sorted.filter((b) => b.status !== '終売'),
       discontinued: sorted.filter((b) => b.status === '終売'),
