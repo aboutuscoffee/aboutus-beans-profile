@@ -7,17 +7,69 @@ import TermDetailView from '../public/TermDetailView';
 import CountryDetailView from '../public/CountryDetailView';
 import AdminBeanForm from './AdminBeanForm';
 import { STATUS_ORDER } from '../../constants';
-import { uploadBeanImage, uploadSeal, parseSealUrls, serializeSealUrls } from '../../lib/db';
+import { uploadBeanImage, uploadCardImage, uploadSeal, parseSealUrls, serializeSealUrls } from '../../lib/db';
 import { sendPushNotification } from '../../lib/push';
 
 const STATUSES = Object.keys(STATUS_ORDER);
 
+function OwnerSlot({ label, fileUrl, isImage, accept, uploading, onUpload, onDelete }) {
+  const preview = isImage && fileUrl;
+  return (
+    <div style={{ minWidth: '100px' }}>
+      <span className="block text-[8px] tracking-widest mb-2" style={{ color: '#9a9080' }}>{label}</span>
+      {fileUrl ? (
+        <div className="relative group" style={{ width: '80px', height: '80px', border: '0.5px solid #D0C8BE', overflow: 'hidden', background: '#F0ECE8' }}>
+          {preview
+            ? <img src={fileUrl} alt="" className="w-full h-full object-cover" />
+            : <div className="w-full h-full flex items-center justify-center text-[9px]" style={{ color: '#7a6a5a' }}>ファイルあり</div>
+          }
+          <div className="absolute inset-0 flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
+            style={{ background: 'rgba(250,250,248,0.9)' }}>
+            <label className="cursor-pointer">
+              <span className="text-[8px] px-1.5 py-0.5" style={{ border: '0.5px solid #A0978E', color: '#5a5248' }}>
+                {uploading ? '…' : '入替'}
+              </span>
+              <input type="file" accept={accept} onChange={(e) => onUpload(e.target.files?.[0])} disabled={uploading} className="hidden" />
+            </label>
+            <button type="button" onClick={onDelete}
+              className="text-[8px] px-1.5 py-0.5 cursor-pointer" style={{ border: '0.5px solid #c05a5a', color: '#c05a5a' }}>
+              削除
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="flex flex-col items-center justify-center cursor-pointer"
+          style={{ width: '80px', height: '80px', border: '0.5px dashed #C0BAB2', background: '#F8F6F2' }}>
+          <span className="text-[9px] mb-0.5" style={{ color: '#c05a5a' }}>未</span>
+          <span className="text-[8px]" style={{ color: '#9a9080' }}>{uploading ? '…' : '＋ 追加'}</span>
+          <input type="file" accept={accept} onChange={(e) => onUpload(e.target.files?.[0])} disabled={uploading} className="hidden" />
+        </label>
+      )}
+    </div>
+  );
+}
+
 function MediaStrip({ bean, onUpdateBean }) {
+  const [cardUploading, setCardUploading] = useState(false);
   const [imgUploading, setImgUploading] = useState(false);
   const [sealUploading, setSealUploading] = useState([false, false]);
   const [error, setError] = useState('');
 
   const sealUrls = parseSealUrls(bean.seal_url);
+
+  const handleCardUpload = async (file) => {
+    if (!file) return;
+    setCardUploading(true);
+    setError('');
+    try {
+      const url = await uploadCardImage(bean.id, file);
+      await onUpdateBean({ ...bean, card_image_url: url });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setCardUploading(false);
+    }
+  };
 
   const handleImageUpload = async (file) => {
     if (!file) return;
@@ -61,15 +113,48 @@ function MediaStrip({ bean, onUpdateBean }) {
 
   return (
     <div style={{ borderTop: '0.5px solid #E0DCD6', backgroundColor: '#FAFAF8', paddingBottom: '80px' }}>
-      <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-5 space-y-5">
-        {/* 管理用バッジ */}
+      <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-5 space-y-6">
         <div className="flex items-center gap-2">
           <span className="text-[7px] px-1.5 py-px tracking-widest" style={{ color: '#7a6a5a', border: '0.5px solid #D0C8BE' }}>管理用</span>
         </div>
 
-        {/* 画像 */}
+        {/* 専用2スロット（カード写真 + シール×2） */}
         <div>
-          <span className="block text-[8px] tracking-widest mb-2" style={{ color: '#9a9080' }}>画像</span>
+          <span className="block text-[8px] tracking-widest mb-3" style={{ color: '#9a9080' }}>専用データ（オーナー格納）</span>
+          <div className="flex gap-5 flex-wrap">
+            <OwnerSlot
+              label="カード写真"
+              fileUrl={bean.card_image_url}
+              isImage={true}
+              accept=".jpg,.jpeg,.png,.webp"
+              uploading={cardUploading}
+              onUpload={handleCardUpload}
+              onDelete={() => onUpdateBean({ ...bean, card_image_url: '' })}
+            />
+            <OwnerSlot
+              label="シール #1"
+              fileUrl={sealUrls[0]}
+              isImage={false}
+              accept=".pdf,.png,.jpg,.jpeg,.ai"
+              uploading={sealUploading[0]}
+              onUpload={(f) => handleSealUpload(f, 0)}
+              onDelete={() => handleSealDelete(0)}
+            />
+            <OwnerSlot
+              label="シール #2"
+              fileUrl={sealUrls[1]}
+              isImage={false}
+              accept=".pdf,.png,.jpg,.jpeg,.ai"
+              uploading={sealUploading[1]}
+              onUpload={(f) => handleSealUpload(f, 1)}
+              onDelete={() => handleSealDelete(1)}
+            />
+          </div>
+        </div>
+
+        {/* その他の画像（自由追加） */}
+        <div>
+          <span className="block text-[8px] tracking-widest mb-2" style={{ color: '#9a9080' }}>その他の画像</span>
           <div className="flex gap-2 flex-wrap items-start">
             {(bean.image_urls ?? []).map((url, i) => (
               <div key={url} className="relative flex-shrink-0" style={{ width: '56px', height: '56px', border: '0.5px solid #D0C8BE', overflow: 'hidden' }}>
@@ -84,40 +169,8 @@ function MediaStrip({ bean, onUpdateBean }) {
             ))}
             <label className="flex items-center justify-center flex-shrink-0 cursor-pointer" style={{ width: '56px', height: '56px', border: '0.5px dashed #D0C8BE' }}>
               <span className="text-[8px]" style={{ color: '#9a9080' }}>{imgUploading ? '…' : '＋ 追加'}</span>
-              <input type="file" accept=".jpg,.jpeg,.png" onChange={(e) => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
+              <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
             </label>
-          </div>
-        </div>
-
-        {/* シールデータ */}
-        <div>
-          <span className="block text-[8px] tracking-widest mb-2" style={{ color: '#9a9080' }}>シールデータ</span>
-          <div className="space-y-2">
-            {[0, 1].map((slotIndex) => (
-              <div key={slotIndex} className="flex items-center gap-3">
-                <span className="text-[10px] w-6" style={{ color: '#9a9080' }}>#{slotIndex + 1}</span>
-                {sealUrls[slotIndex] ? (
-                  <>
-                    <a href={sealUrls[slotIndex]} target="_blank" rel="noreferrer"
-                      className="text-[10px] underline truncate" style={{ color: '#443A35', maxWidth: '180px' }}>
-                      ファイルを確認
-                    </a>
-                    <button type="button" onClick={() => handleSealDelete(slotIndex)}
-                      className="text-[10px] cursor-pointer flex-shrink-0" style={{ color: '#c05a5a' }}>
-                      削除
-                    </button>
-                  </>
-                ) : (
-                  <label className="cursor-pointer">
-                    <span className={`inline-block text-[10px] px-3 py-1 transition-colors ${sealUploading[slotIndex] ? 'opacity-40' : ''}`}
-                      style={{ border: '0.5px solid #C0BAB2', color: '#5a5248' }}>
-                      {sealUploading[slotIndex] ? 'アップロード中...' : 'ファイルを選択'}
-                    </span>
-                    <input type="file" accept=".pdf,.png,.jpg,.jpeg,.ai" onChange={(e) => handleSealUpload(e.target.files?.[0], slotIndex)} disabled={sealUploading[slotIndex]} className="hidden" />
-                  </label>
-                )}
-              </div>
-            ))}
           </div>
         </div>
 

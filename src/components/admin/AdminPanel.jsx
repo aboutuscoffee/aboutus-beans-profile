@@ -84,7 +84,7 @@ export default function AdminPanel({ data, updateBeans, updateFarms, updateCount
         </div>
       </nav>
       <main className="max-w-3xl mx-auto px-4 py-8 font-sans-jp">
-        {tab === 'ダッシュボード' && <AdminDashboard data={data} onSelectStatus={setPreviewStatus} />}
+        {tab === 'ダッシュボード' && <AdminDashboard data={data} onSelectStatus={setPreviewStatus} onUpdateBeans={updateBeans} />}
         {tab === '豆管理' && <AdminBeans beans={data.beans} updateBeans={updateBeans} />}
         {tab === 'シール管理' && <AdminSeals beans={data.beans} updateBeans={updateBeans} seals={data.seals ?? []} updateSeals={updateSeals} />}
         {tab === '画像管理' && <AdminImages beans={data.beans} updateBeans={updateBeans} onGoToBeans={() => setTab('豆管理')} />}
