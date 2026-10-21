@@ -122,7 +122,11 @@ export default function BeanListView({ beans, onSelectBean, savedPage, onPageCha
 
 function BeanCard({ bean, onSelect }) {
   const dotColor = STATUS_DOT[bean.status] ?? '#C2BCA9';
-  const thumb = bean.image_urls?.find(Boolean);
+  const cardThumb = (() => {
+    if (!bean.card_image_url) return null;
+    try { return JSON.parse(bean.card_image_url)[0] ?? null; } catch { return bean.card_image_url; }
+  })();
+  const thumb = bean.image_urls?.find(Boolean) ?? cardThumb;
 
   return (
     <div
