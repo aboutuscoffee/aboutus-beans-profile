@@ -37,7 +37,7 @@ function MissingAssetPanel({ bean, type, onClose, onSaved }) {
   const slots = type === 'card'
     ? parseCardUrls(bean.card_image_url)
     : parseSealUrls(bean.seal_url);
-  const emptySlots = [0, 1].filter((i) => !slots[i]);
+  const emptySlots = (type === 'seal' ? [0] : [0, 1]).filter((i) => !slots[i]);
 
   return (
     <div className="mt-2 p-3" style={{ background: '#F4F0EB', border: '0.5px solid #D0C8BE' }}>
@@ -73,7 +73,7 @@ function MissingAssetRow({ bean, onSaved }) {
   const cardUrls = parseCardUrls(bean.card_image_url);
   const sealUrls = parseSealUrls(bean.seal_url);
   const missingCard = cardUrls.some((u) => !u);
-  const missingSeal = sealUrls.some((u) => !u);
+  const missingSeal = !sealUrls[0];
 
   const toggle = (type) => setOpenPanel((p) => p === type ? null : type);
 
@@ -134,7 +134,7 @@ export default function AdminDashboard({ data, onSelectStatus, onUpdateBeans }) 
     if (b.status === '終売') return false;
     const cardUrls = parseCardUrls(b.card_image_url);
     const sealUrls = parseSealUrls(b.seal_url);
-    return cardUrls.some((u) => !u) || sealUrls.some((u) => !u);
+    return cardUrls.some((u) => !u) || !sealUrls[0];
   });
 
   const handleBeanSaved = (updated) => {
