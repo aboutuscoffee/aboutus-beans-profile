@@ -394,7 +394,7 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
       >
         {/* 豆一覧 */}
         {!current && (
-          <BeanListView beans={filtered} onSelectBean={(id) => navigateTo('beans', id)} savedPage={beanPage} onPageChange={setBeanPage} savedSearch={beanSearch} onSearchChange={setBeanSearch} />
+          <BeanListView beans={filtered} onSelectBean={(id) => navigateTo('beans', id)} savedPage={beanPage} onPageChange={setBeanPage} savedSearch={beanSearch} onSearchChange={setBeanSearch} initialDiscontinuedOpen={status === '終売'} />
         )}
 
         {/* 豆詳細 */}

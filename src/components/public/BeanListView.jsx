@@ -12,10 +12,10 @@ const STATUS_DOT = {
   '終売':     '#C2BCA9',
 };
 
-export default function BeanListView({ beans, onSelectBean, savedPage, onPageChange, savedSearch, onSearchChange }) {
+export default function BeanListView({ beans, onSelectBean, savedPage, onPageChange, savedSearch, onSearchChange, initialDiscontinuedOpen = false }) {
   const [localSearch, setLocalSearch] = useState(savedSearch ?? '');
   const [localPage, setLocalPage] = useState(savedPage ?? 1);
-  const [discontinuedOpen, setDiscontinuedOpen] = useState(false);
+  const [discontinuedOpen, setDiscontinuedOpen] = useState(initialDiscontinuedOpen);
 
   const search = savedSearch !== undefined ? savedSearch : localSearch;
   const page = savedPage !== undefined ? savedPage : localPage;
@@ -38,7 +38,11 @@ export default function BeanListView({ beans, onSelectBean, savedPage, onPageCha
             stripWikiLinks(b.variety ?? '').toLowerCase().includes(q)
         )
       : beans;
-    const sorted = [...list].sort((a, b) => (b.price || 0) - (a.price || 0));
+    const sorted = [...list].sort((a, b) => {
+      const statusDiff = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
+      if (statusDiff !== 0) return statusDiff;
+      return (b.price || 0) - (a.price || 0);
+    });
     return {
       active: sorted.filter((b) => b.status !== '終売'),
       discontinued: sorted.filter((b) => b.status === '終売'),
@@ -126,7 +130,7 @@ function BeanCard({ bean, onSelect }) {
     if (!bean.card_image_url) return null;
     try { return JSON.parse(bean.card_image_url)[0] ?? null; } catch { return bean.card_image_url; }
   })();
-  const thumb = bean.image_urls?.find(Boolean) ?? cardThumb;
+  const thumb = cardThumb;
 
   return (
     <div
