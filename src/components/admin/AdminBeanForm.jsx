@@ -8,8 +8,10 @@ export const EMPTY_BEAN = {
   name: '', origin: '', region: '', variety: '', altitude: '', process: '', terroir: '', producer: '',
   status: '未リリース', is_new: false, price: 0,
   description_ja: '', description_en: '', taste_ja: '', taste_en: '', detail_ja: '', detail_en: '',
-  image_urls: [], seal_name: '',
+  image_urls: [], seal_name: '', stores: [],
 };
+
+const STORES = ['二条', '伏見'];
 
 export default function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
   const [form, setForm] = useState(() => (bean ? { ...bean } : { ...EMPTY_BEAN }));
@@ -97,6 +99,24 @@ export default function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
           </select>
         </div>
         <TextInput label="価格（ソート用）" value={form.price} onChange={(v) => set('price', v)} type="number" />
+      </div>
+      <div>
+        <span className="block text-[11px] tracking-widest text-stone-500 mb-1">提供店舗（豆のストーリーのバッジ）</span>
+        <div className="flex gap-5 py-1.5">
+          {STORES.map((st) => (
+            <label key={st} className="flex items-center gap-1.5 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={(form.stores ?? []).includes(st)}
+                onChange={(e) => {
+                  const cur = form.stores ?? [];
+                  set('stores', e.target.checked ? STORES.filter((x) => x === st || cur.includes(x)) : cur.filter((x) => x !== st));
+                }}
+              />
+              {st}
+            </label>
+          ))}
+        </div>
       </div>
       <label className="flex items-center gap-2 cursor-pointer">
         <input type="checkbox" checked={form.is_new} onChange={(e) => set('is_new', e.target.checked)} className="accent-stone-700" />
