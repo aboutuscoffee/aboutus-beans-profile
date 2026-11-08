@@ -9,8 +9,85 @@ import AdminBeanForm from './AdminBeanForm';
 import { STATUS_ORDER } from '../../constants';
 import { uploadBeanImage, uploadCardImage, uploadSeal, parseSealUrls, serializeSealUrls, parseCardUrls, serializeCardUrls } from '../../lib/db';
 import { sendPushNotification } from '../../lib/push';
+import { stripWikiLinks } from '../../utils';
 
 const STATUSES = Object.keys(STATUS_ORDER);
+
+function OnlineCopySection({ bean }) {
+  const [open, setOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  const clean = (s) => stripWikiLinks(s ?? '');
+
+  const buildText = () => {
+    const lines = [];
+    if (bean.origin)   lines.push(`Origin(生産国)：${clean(bean.origin)}`);
+    if (bean.region)   lines.push(`Region(地域)：${clean(bean.region)}`);
+    if (bean.producer) lines.push(`Farm：${bean.producer}`);
+    if (bean.variety)  lines.push(`Variety(品種)：${clean(bean.variety)}`);
+    if (bean.altitude) lines.push(`Altitude(標高)：${bean.altitude}`);
+    if (bean.process)  lines.push(`Process(精製法)：${clean(bean.process)}`);
+    const ja = bean.online_desc_ja?.trim();
+    if (ja) lines.push('', ja);
+
+    lines.push('', 'English translation is below.', '');
+
+    if (bean.origin)   lines.push(`Origin：${clean(bean.origin)}`);
+    if (bean.region)   lines.push(`Region：${clean(bean.region)}`);
+    if (bean.producer) lines.push(`Farm：${bean.producer}`);
+    if (bean.variety)  lines.push(`Variety：${clean(bean.variety)}`);
+    if (bean.altitude) lines.push(`Altitude：${bean.altitude}`);
+    if (bean.process)  lines.push(`Process：${clean(bean.process)}`);
+    const en = bean.online_desc_en?.trim();
+    if (en) lines.push('', en);
+
+    return lines.join('\n');
+  };
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(buildText()).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  return (
+    <div style={{ borderTop: '0.5px solid #E0DCD6', backgroundColor: '#F8F7F4' }}>
+      <div className="max-w-2xl md:max-w-4xl mx-auto px-6 py-4">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="flex items-center gap-2 cursor-pointer w-full text-left"
+          style={{ color: '#9a9080' }}
+        >
+          <span className="text-[9px] tracking-widest">{open ? '▲' : '▼'}</span>
+          <span className="text-[10px] tracking-widest">オンライン販売用テキスト</span>
+        </button>
+        {open && (
+          <div className="mt-4">
+            <pre
+              className="text-[11px] leading-relaxed whitespace-pre-wrap break-words p-4 rounded-none select-all"
+              style={{ background: '#F0EDE8', color: '#443A35', border: '0.5px solid #D0C8BE', fontFamily: 'inherit' }}
+            >
+              {buildText() || '（説明文が未入力です）'}
+            </pre>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="mt-3 text-[10px] tracking-widest px-5 py-1.5 cursor-pointer transition-colors"
+              style={{
+                border: copied ? '0.5px solid #5a8a5a' : '0.5px solid #A0978E',
+                color: copied ? '#5a8a5a' : '#7a6a5a',
+              }}
+            >
+              {copied ? 'コピーしました' : '全文コピー'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function OwnerSlot({ label, fileUrl, isImage, accept, uploading, onUpload, onDelete, onDropUrl, isDragOver, onDragOver, onDragLeave }) {
   const preview = isImage && fileUrl;
@@ -461,6 +538,11 @@ export default function AdminStatusPreview({ status, data, updateBeans, onClose 
           />
         )}
       </div>
+
+      {/* オンライン販売用テキスト（豆詳細プレビュータブのみ） */}
+      {isBean && currentBean && editTab === 'preview' && (
+        <OnlineCopySection bean={currentBean} />
+      )}
 
       {/* 画像・シールストリップ（豆詳細プレビュータブのみ） */}
       {isBean && currentBean && editTab === 'preview' && (

@@ -8,6 +8,7 @@ export const EMPTY_BEAN = {
   name: '', origin: '', region: '', variety: '', altitude: '', process: '', terroir: '', producer: '',
   status: '未リリース', is_new: false, price: 0,
   description_ja: '', description_en: '', taste_ja: '', taste_en: '', detail_ja: '', detail_en: '',
+  online_desc_ja: '', online_desc_en: '',
   image_urls: [], seal_name: '', stores: [],
 };
 
@@ -143,6 +144,14 @@ export default function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
 
       <TextArea label="詳細（日本語）" value={form.detail_ja} onChange={(v) => set('detail_ja', v)} rows={3} />
       <TextArea label="詳細（English）" value={form.detail_en} onChange={(v) => set('detail_en', v)} rows={2} />
+
+      <div className="border-t border-stone-200 pt-4">
+        <span className="block text-[11px] tracking-widest text-stone-500 mb-3">オンライン販売用説明文</span>
+        <TextArea label="説明文（日本語）" value={form.online_desc_ja ?? ''} onChange={(v) => set('online_desc_ja', v)} rows={4} />
+        <div className="mt-4">
+          <TextArea label="説明文（English）" value={form.online_desc_en ?? ''} onChange={(v) => set('online_desc_en', v)} rows={3} />
+        </div>
+      </div>
 
       <div className="border-t border-stone-200 pt-4">
         <span className="block text-[11px] tracking-widest text-stone-500 mb-3">画像（JPEG / PNG）</span>
