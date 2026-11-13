@@ -178,7 +178,7 @@ export default function AdminBeanForm({ bean, onSave, onCancel, onDelete }) {
             ))}
             <label className="w-24 h-24 border border-stone-200 flex items-center justify-center cursor-pointer hover:bg-stone-50">
               <span className="text-[10px] text-stone-400">{imgUploading ? '...' : '+ 追加'}</span>
-              <input type="file" accept=".jpg,.jpeg,.png" onChange={e => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
+              <input type="file" accept="image/*" onChange={e => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
             </label>
           </div>
         )}

@@ -222,7 +222,7 @@ function MediaStrip({ bean, onUpdateBean }) {
               label={`カード写真 #${i + 1}`}
               fileUrl={cardUrls[i]}
               isImage={true}
-              accept=".jpg,.jpeg,.png,.webp"
+              accept="image/*"
               uploading={cardUploading[i]}
               onUpload={(f) => handleCardUpload(f, i)}
               onDelete={() => handleCardDelete(i)}
@@ -269,7 +269,7 @@ function MediaStrip({ bean, onUpdateBean }) {
             ))}
             <label className="flex items-center justify-center flex-shrink-0 cursor-pointer" style={{ width: '56px', height: '56px', border: '0.5px dashed #D0C8BE' }}>
               <span className="text-[8px]" style={{ color: '#9a9080' }}>{imgUploading ? '…' : '＋ 追加'}</span>
-              <input type="file" accept=".jpg,.jpeg,.png,.webp" onChange={(e) => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
+              <input type="file" accept="image/*" onChange={(e) => handleImageUpload(e.target.files?.[0])} disabled={imgUploading} className="hidden" />
             </label>
           </div>
         </div>
