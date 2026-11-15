@@ -77,29 +77,35 @@ export async function uploadStandaloneSeal(slug, file) {
   return data.publicUrl;
 }
 
-export async function uploadBeanImage(beanId, file) {
-  const ext = file.name.split('.').pop().toLowerCase();
-  const path = `${beanId}-${Date.now()}.${ext}`;
-  const contentType = file.type || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-  let uploadResult;
-  try {
-    uploadResult = await supabase.storage.from('bean-images').upload(path, file, { upsert: true, contentType });
-  } catch (e) {
-    throw new Error(`ネットワークエラー: ${e.message}`);
+async function uploadToStorage(bucket, path, file) {
+  const contentType = file.type || 'image/jpeg';
+  const storageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+  const res = await fetch(storageUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      'Content-Type': contentType,
+      'x-upsert': 'true',
+    },
+    body: file,
+  });
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Upload ${res.status}: ${text}`);
   }
-  if (uploadResult.error) throw new Error(uploadResult.error.message);
-  const { data } = supabase.storage.from('bean-images').getPublicUrl(path);
-  return data.publicUrl;
+  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+}
+
+export async function uploadBeanImage(beanId, file) {
+  const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
+  const path = `${beanId}-${Date.now()}.${ext}`;
+  return uploadToStorage('bean-images', path, file);
 }
 
 export async function uploadCardImage(beanId, file, index = 0) {
-  const ext = file.name.split('.').pop().toLowerCase();
+  const ext = file.name.split('.').pop().toLowerCase() || 'jpg';
   const path = `${beanId}_card${index + 1}_${Date.now()}.${ext}`;
-  const contentType = file.type || `image/${ext === 'jpg' ? 'jpeg' : ext}`;
-  const { error: upErr } = await supabase.storage.from('bean-images').upload(path, file, { upsert: true, contentType });
-  if (upErr) throw new Error(upErr.message);
-  const { data } = supabase.storage.from('bean-images').getPublicUrl(path);
-  return data.publicUrl;
+  return uploadToStorage('bean-images', path, file);
 }
 
 export function parseCardUrls(cardUrl) {
