@@ -77,30 +77,41 @@ export async function uploadStandaloneSeal(slug, file) {
   return data.publicUrl;
 }
 
-async function uploadToStorage(bucket, path, file, attempt = 0) {
+async function uploadToStorage(bucket, path, file) {
   const contentType = file.type || 'image/jpeg';
   const storageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+
+  // iOSではFile参照がすぐに無効になるため、Object URL経由でBlobに変換する
+  let body = file;
   try {
-    const res = await fetch(storageUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        'Content-Type': contentType,
-        'x-upsert': 'true',
-      },
-      body: file,
-    });
-    if (!res.ok) {
-      const text = await res.text().catch(() => '');
-      throw new Error(`Upload ${res.status}: ${text}`);
+    const objectUrl = URL.createObjectURL(file);
+    const r = await fetch(objectUrl);
+    body = await r.blob();
+    URL.revokeObjectURL(objectUrl);
+  } catch {
+    // fallback: File をそのまま使う
+  }
+
+  for (let attempt = 0; attempt <= 2; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
+    try {
+      const res = await fetch(storageUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': contentType,
+          'x-upsert': 'true',
+        },
+        body,
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(`Upload ${res.status}: ${text}`);
+      }
+      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+    } catch (e) {
+      if (attempt === 2 || e.message !== 'Failed to fetch') throw e;
     }
-    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
-  } catch (e) {
-    if (attempt < 2 && e.message === 'Failed to fetch') {
-      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
-      return uploadToStorage(bucket, path, file, attempt + 1);
-    }
-    throw e;
   }
 }
 
