@@ -77,23 +77,31 @@ export async function uploadStandaloneSeal(slug, file) {
   return data.publicUrl;
 }
 
-async function uploadToStorage(bucket, path, file) {
+async function uploadToStorage(bucket, path, file, attempt = 0) {
   const contentType = file.type || 'image/jpeg';
   const storageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-  const res = await fetch(storageUrl, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      'Content-Type': contentType,
-      'x-upsert': 'true',
-    },
-    body: file,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`Upload ${res.status}: ${text}`);
+  try {
+    const res = await fetch(storageUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        'Content-Type': contentType,
+        'x-upsert': 'true',
+      },
+      body: file,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      throw new Error(`Upload ${res.status}: ${text}`);
+    }
+    return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+  } catch (e) {
+    if (attempt < 2 && e.message === 'Failed to fetch') {
+      await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      return uploadToStorage(bucket, path, file, attempt + 1);
+    }
+    throw e;
   }
-  return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 }
 
 export async function uploadBeanImage(beanId, file) {
