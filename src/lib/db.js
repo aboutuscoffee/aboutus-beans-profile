@@ -77,11 +77,31 @@ export async function uploadStandaloneSeal(slug, file) {
   return data.publicUrl;
 }
 
+function xhrUpload(url, body, contentType, key) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url, true);
+    xhr.setRequestHeader('Authorization', `Bearer ${key}`);
+    xhr.setRequestHeader('Content-Type', contentType);
+    xhr.setRequestHeader('x-upsert', 'true');
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload ${xhr.status}: ${xhr.responseText}`));
+    };
+    xhr.onerror = () => reject(new Error('XHR network error'));
+    xhr.ontimeout = () => reject(new Error('XHR timeout'));
+    xhr.timeout = 60000;
+    xhr.send(body);
+  });
+}
+
 async function uploadToStorage(bucket, path, file) {
   const contentType = file.type || 'image/jpeg';
   const storageUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
+  const key = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const publicUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
 
-  // iOSではFile参照がすぐに無効になるため、Object URL経由でBlobに変換する
+  // Object URL経由でBlobに変換（iOS Safariのファイル参照問題対策）
   let body = file;
   try {
     const objectUrl = URL.createObjectURL(file);
@@ -89,30 +109,31 @@ async function uploadToStorage(bucket, path, file) {
     body = await r.blob();
     URL.revokeObjectURL(objectUrl);
   } catch {
-    // fallback: File をそのまま使う
+    // fallback
   }
 
-  for (let attempt = 0; attempt <= 2; attempt++) {
-    if (attempt > 0) await new Promise((r) => setTimeout(r, 1000 * attempt));
+  // まず fetch で試みる
+  for (let attempt = 0; attempt <= 1; attempt++) {
+    if (attempt > 0) await new Promise((r) => setTimeout(r, 1000));
     try {
       const res = await fetch(storageUrl, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': contentType,
-          'x-upsert': 'true',
-        },
+        headers: { 'Authorization': `Bearer ${key}`, 'Content-Type': contentType, 'x-upsert': 'true' },
         body,
       });
       if (!res.ok) {
         const text = await res.text().catch(() => '');
         throw new Error(`Upload ${res.status}: ${text}`);
       }
-      return `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+      return publicUrl;
     } catch (e) {
-      if (attempt === 2 || e.message !== 'Failed to fetch') throw e;
+      if (e.message !== 'Failed to fetch') throw e;
     }
   }
+
+  // fetchが全滅した場合はXHRで試みる
+  await xhrUpload(storageUrl, body, contentType, key);
+  return publicUrl;
 }
 
 export async function uploadBeanImage(beanId, file) {
